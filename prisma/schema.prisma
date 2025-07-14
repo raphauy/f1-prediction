@@ -1,0 +1,110 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  name        String?
+  role        Role?    // Nullable - solo superadmins tienen rol
+  image       String?  // URL de imagen de perfil
+  isOnboarded Boolean  @default(false) // Si completó onboarding
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relación con tokens OTP
+  otpTokens OtpToken[]
+  
+  // Relación con workspaces
+  workspaces WorkspaceUser[]
+  
+  // Relación con invitaciones enviadas
+  invitations WorkspaceInvitation[]
+  
+  @@map("users")
+}
+
+model OtpToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  
+  // Relación con usuario
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("otp_tokens")
+}
+
+model Workspace {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  settings    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relación con usuarios
+  users WorkspaceUser[]
+  
+  // Relación con invitaciones
+  invitations WorkspaceInvitation[]
+  
+  @@map("workspaces")
+}
+
+model WorkspaceUser {
+  id          String        @id @default(cuid())
+  userId      String
+  workspaceId String
+  role        WorkspaceRole @default(member)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  
+  // Relaciones
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, workspaceId])
+  @@map("workspace_users")
+}
+
+enum Role {
+  superadmin // Super admin del sistema
+}
+
+enum WorkspaceRole {
+  admin  // Admin del workspace
+  member // Miembro del workspace
+}
+
+model WorkspaceInvitation {
+  id          String        @id @default(cuid())
+  email       String
+  workspaceId String
+  role        WorkspaceRole @default(member)
+  token       String        @unique
+  expiresAt   DateTime
+  invitedById String
+  acceptedAt  DateTime?
+  createdAt   DateTime      @default(now())
+  
+  // Relaciones
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  invitedBy   User      @relation(fields: [invitedById], references: [id])
+  
+  @@index([email])
+  @@index([token])
+  @@map("workspace_invitations")
+}
