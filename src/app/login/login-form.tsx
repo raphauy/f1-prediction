@@ -92,7 +92,7 @@ export function LoginForm() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader className="text-center">
-        <CardTitle>RC Starter Kit</CardTitle>
+        <CardTitle>F1 Predictions Game</CardTitle>
         <CardDescription>
           {step === "email" 
             ? searchParams.get("email") 

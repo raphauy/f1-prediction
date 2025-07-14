@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RC Starter Kit",
-  description: "Kit de inicio para aplicaciones React con Next.js",
+  title: "F1 Predictions Game",
+  description: "Plataforma de predicciones de Fórmula 1 para competir con amigos",
 };
 
 export default function RootLayout({

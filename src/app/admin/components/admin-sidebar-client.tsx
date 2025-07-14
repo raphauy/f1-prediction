@@ -24,6 +24,7 @@ import {
   Building2,
   Settings,
   ExternalLink,
+  Trophy,
 } from "lucide-react"
 import Image from "next/image"
 
@@ -46,6 +47,12 @@ const adminNavItems = [
     badge: "workspaces"
   },
   {
+    title: "Temporadas F1",
+    href: "/admin/seasons",
+    icon: Trophy,
+    badge: "seasons"
+  },
+  {
     title: "Configuración",
     href: "/admin/settings",
     icon: Settings
@@ -56,9 +63,10 @@ interface AdminSidebarClientProps {
   children: React.ReactNode
   userCount: number
   workspaceCount: number
+  seasonCount: number
 }
 
-export function AdminSidebarClient({ children, userCount, workspaceCount }: AdminSidebarClientProps) {
+export function AdminSidebarClient({ children, userCount, workspaceCount, seasonCount }: AdminSidebarClientProps) {
   const pathname = usePathname()
 
   const getBadgeCount = (badgeType: string) => {
@@ -67,6 +75,8 @@ export function AdminSidebarClient({ children, userCount, workspaceCount }: Admi
         return userCount
       case "workspaces":
         return workspaceCount
+      case "seasons":
+        return seasonCount
       default:
         return 0
     }

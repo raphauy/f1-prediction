@@ -8,14 +8,15 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Settings, AlertTriangle, Upload, Image as ImageIcon } from "lucide-react"
 import { toast } from 'sonner'
+import { WorkspaceAvatar } from "@/components/workspace-avatar"
 import { 
   updateWorkspaceAction, 
-  uploadWorkspaceImageAction, 
-  deleteWorkspaceImageAction,
+  uploadWorkspaceImageAdminAction, 
+  deleteWorkspaceImageAdminAction,
   deleteWorkspaceAction 
 } from './actions'
 
-interface SettingsFormProps {
+interface WorkspaceEditFormProps {
   workspace: {
     id: string
     slug: string
@@ -25,7 +26,7 @@ interface SettingsFormProps {
   }
 }
 
-export function SettingsForm({ workspace }: SettingsFormProps) {
+export function WorkspaceEditForm({ workspace }: WorkspaceEditFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isUpdating, setIsUpdating] = useState(false)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
@@ -38,11 +39,9 @@ export function SettingsForm({ workspace }: SettingsFormProps) {
     const formData = new FormData(event.currentTarget)
 
     try {
-      await updateWorkspaceAction(workspace.slug, formData)
-      toast.success('Workspace actualizado correctamente')
+      await updateWorkspaceAction(workspace.id, formData)
     } catch {
       toast.error('Error al actualizar el workspace')
-    } finally {
       setIsUpdating(false)
     }
   }
@@ -56,8 +55,14 @@ export function SettingsForm({ workspace }: SettingsFormProps) {
     formData.append('image', file)
 
     try {
-      await uploadWorkspaceImageAction(workspace.slug, formData)
-      toast.success('Imagen actualizada correctamente')
+      const result = await uploadWorkspaceImageAdminAction(workspace.id, formData)
+      if (result.success) {
+        toast.success(result.message)
+        // Recargar la página para ver la nueva imagen
+        window.location.reload()
+      } else {
+        toast.error(result.error)
+      }
     } catch {
       toast.error('Error al subir la imagen')
     } finally {
@@ -70,8 +75,14 @@ export function SettingsForm({ workspace }: SettingsFormProps) {
 
     setIsUploadingImage(true)
     try {
-      await deleteWorkspaceImageAction(workspace.slug)
-      toast.success('Imagen eliminada correctamente')
+      const result = await deleteWorkspaceImageAdminAction(workspace.id)
+      if (result.success) {
+        toast.success(result.message)
+        // Recargar la página para actualizar la vista
+        window.location.reload()
+      } else {
+        toast.error(result.error)
+      }
     } catch {
       toast.error('Error al eliminar la imagen')
     } finally {
@@ -86,21 +97,17 @@ export function SettingsForm({ workspace }: SettingsFormProps) {
 
     setIsDeletingWorkspace(true)
     try {
-      await deleteWorkspaceAction(workspace.slug)
-      toast.success('Workspace eliminado correctamente')
+      const result = await deleteWorkspaceAction(workspace.id)
+      if (result.success) {
+        toast.success(result.message)
+      } else {
+        toast.error(result.error)
+        setIsDeletingWorkspace(false)
+      }
     } catch {
       toast.error('Error al eliminar el workspace')
       setIsDeletingWorkspace(false)
     }
-  }
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2)
   }
 
   return (
@@ -133,14 +140,17 @@ export function SettingsForm({ workspace }: SettingsFormProps) {
               <div className="space-y-2">
                 <Label htmlFor="slug">Slug</Label>
                 <Input 
-                  id="slug" 
+                  id="slug"
+                  name="slug"
                   defaultValue={workspace.slug}
                   placeholder="workspace-slug"
-                  readOnly
-                  className="bg-muted"
+                  pattern="^[a-z0-9-]+$"
+                  title="Solo letras minúsculas, números y guiones"
+                  required
+                  disabled={isUpdating}
                 />
                 <p className="text-xs text-muted-foreground">
-                  El slug no se puede cambiar después de la creación
+                  Solo letras minúsculas, números y guiones
                 </p>
               </div>
             </div>
@@ -157,7 +167,15 @@ export function SettingsForm({ workspace }: SettingsFormProps) {
               />
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
+              <Button 
+                type="button" 
+                variant="outline"
+                onClick={() => window.location.href = '/admin/workspaces'}
+                disabled={isUpdating}
+              >
+                Cancelar
+              </Button>
               <Button type="submit" disabled={isUpdating}>
                 {isUpdating ? 'Guardando...' : 'Guardar Cambios'}
               </Button>
@@ -180,22 +198,7 @@ export function SettingsForm({ workspace }: SettingsFormProps) {
         <CardContent className="space-y-4">
           <div className="flex items-center space-x-4">
             {/* Image Preview */}
-            <div className="relative">
-              {workspace.image ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={workspace.image}
-                  alt={workspace.name}
-                  className="w-20 h-20 rounded-lg object-cover"
-                />
-              ) : (
-                <div className="w-20 h-20 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <span className="text-2xl font-semibold text-primary">
-                    {getInitials(workspace.name)}
-                  </span>
-                </div>
-              )}
-            </div>
+            <WorkspaceAvatar workspace={workspace} size="lg" />
 
             {/* Upload Button */}
             <div className="flex flex-col space-y-2">

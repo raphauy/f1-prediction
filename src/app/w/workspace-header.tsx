@@ -13,6 +13,8 @@ import { LogOut, Settings, User } from "lucide-react"
 import { signOut } from "next-auth/react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { WorkspaceSelector } from "@/components/workspace-selector"
+import type { Workspace } from "@prisma/client"
 
 interface WorkspaceHeaderProps {
   user: {
@@ -22,9 +24,12 @@ interface WorkspaceHeaderProps {
     role: string
     image?: string | null
   }
+  userWorkspaces?: {
+    workspace: Workspace
+  }[]
 }
 
-export function WorkspaceHeader({ user }: WorkspaceHeaderProps) {
+export function WorkspaceHeader({ user, userWorkspaces }: WorkspaceHeaderProps) {
   const getInitials = (name: string | null, email: string) => {
     if (name) {
       return name
@@ -41,33 +46,53 @@ export function WorkspaceHeader({ user }: WorkspaceHeaderProps) {
     <header className="border-b bg-background">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
-          {/* Logo/Brand */}
-          <div className="flex items-center space-x-4">
-            <Link href="/w" className="text-xl font-bold">
-              RC Starter Kit
+          {/* Logo + Workspace Selector */}
+          <div className="flex items-center space-x-3">
+            {/* Logo */}
+            <Link href="/w" className="flex items-center">
+              <span className="text-xl font-bold">F1 Predictions</span>
             </Link>
-          </div>
-
-          {/* Navigation */}
-          <nav className="hidden md:flex items-center space-x-6">
-            <Link 
-              href="/w" 
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {user.role === "superadmin" ? "Todos los Workspaces" : "Mis Workspaces"}
-            </Link>
-            {user.role === "superadmin" && (
-              <Link 
-                href="/admin" 
-                className="text-blue-600 hover:text-blue-800 transition-colors font-medium"
-              >
-                Panel Admin
-              </Link>
+            
+            {/* Separador y selector cuando hay workspaces */}
+            {userWorkspaces && userWorkspaces.length > 0 && (
+              <>
+                <span className="text-muted-foreground text-sm">/</span>
+                <WorkspaceSelector
+                  userWorkspaces={userWorkspaces}
+                />
+              </>
             )}
-          </nav>
+            
+            {/* Navegación cuando no hay workspaces */}
+            {(!userWorkspaces || userWorkspaces.length === 0) && (
+              <nav className="hidden md:flex items-center space-x-6 ml-3">
+                <Link 
+                  href="/w" 
+                  className="text-muted-foreground hover:text-foreground transition-colors text-sm"
+                >
+                  {user.role === "superadmin" ? "Todos los Workspaces" : "Mis Workspaces"}
+                </Link>
+                {user.role === "superadmin" && (
+                  <Link 
+                    href="/admin" 
+                    className="text-blue-600 hover:text-blue-800 transition-colors font-medium text-sm"
+                  >
+                    Panel Admin
+                  </Link>
+                )}
+              </nav>
+            )}
+          </div>
 
           {/* Actions */}
           <div className="flex items-center space-x-2">
+            {user.role === "superadmin" && (
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/admin" className="text-blue-600 hover:text-blue-800">
+                  Admin
+                </Link>
+              </Button>
+            )}
             <ThemeToggle />
             
             {/* User Menu */}

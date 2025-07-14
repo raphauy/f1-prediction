@@ -25,19 +25,17 @@ export async function sendWorkspaceInvitationEmail(input: SendInvitationEmailInp
   try {
     const validatedInput = sendInvitationEmailSchema.parse(input)
     
-    const appName = process.env.APP_NAME || "RC Starter Kit"
     const fromEmail = process.env.RESEND_FROM_EMAIL || "notifications@raphauy.dev"
     
     const { data, error } = await resend.emails.send({
-      from: `${appName} <${fromEmail}>`,
+      from: `F1 Predictions Game <${fromEmail}>`,
       to: [validatedInput.to],
-      subject: `Invitación a "${validatedInput.workspaceName}" en ${appName}`,
+      subject: `Invitación a "${validatedInput.workspaceName}" en F1 Predictions Game`,
       react: WorkspaceInvitationEmail({
         invitedUserEmail: validatedInput.to,
         inviterName: validatedInput.inviterName,
         workspaceName: validatedInput.workspaceName,
         acceptUrl: validatedInput.acceptUrl,
-        appName,
         expiresInDays: validatedInput.expiresInDays
       }),
     })
@@ -90,16 +88,14 @@ export async function sendOtpEmail(input: SendOtpEmailInput) {
   try {
     const validatedInput = sendOtpEmailSchema.parse(input)
     
-    const appName = process.env.APP_NAME || "RC Starter Kit"
     const fromEmail = process.env.RESEND_FROM_EMAIL || "notifications@raphauy.dev"
     
     const { data, error } = await resend.emails.send({
-      from: `${appName} <${fromEmail}>`,
+      from: `F1 Predictions Game <${fromEmail}>`,
       to: [validatedInput.to],
-      subject: `Tu código de verificación de ${appName}`,
+      subject: `Tu código de verificación de F1 Predictions Game`,
       react: OtpEmail({
-        otp: validatedInput.otp,
-        appName
+        otp: validatedInput.otp
       }),
     })
     

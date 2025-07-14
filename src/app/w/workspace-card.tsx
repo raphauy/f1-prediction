@@ -1,8 +1,9 @@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { WorkspaceAvatar } from "@/components/workspace-avatar"
 import { Workspace, WorkspaceRole } from "@prisma/client"
-import { Building2, Users, ArrowRight, Shield } from "lucide-react"
+import { Users, ArrowRight, Shield } from "lucide-react"
 import Link from "next/link"
 
 interface WorkspaceCardProps {
@@ -37,8 +38,8 @@ export function WorkspaceCard({ workspace, userRole, isSuperadmin = false }: Wor
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
-          <div className="flex items-center space-x-2">
-            <Building2 className="h-5 w-5 text-muted-foreground" />
+          <div className="flex items-center space-x-3">
+            <WorkspaceAvatar workspace={workspace} size="md" />
             <CardTitle className="text-lg">{workspace.name}</CardTitle>
           </div>
           {getRoleBadge(userRole, isSuperadmin)}

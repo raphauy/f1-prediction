@@ -42,19 +42,21 @@ export function WorkspaceForm({ workspace, isEdit = false }: WorkspaceFormProps)
     setLoading(true)
     
     try {
-      const result = isEdit 
-        ? await updateWorkspaceAction(workspace!.id, formData)
-        : await createWorkspaceAction(formData)
-      
-      if (result.success) {
-        toast.success(result.message)
-        router.push("/admin/workspaces")
+      if (isEdit) {
+        // updateWorkspaceAction hace redirect automáticamente
+        await updateWorkspaceAction(workspace!.id, formData)
       } else {
-        toast.error(result.error)
+        const result = await createWorkspaceAction(formData)
+        
+        if (result.success) {
+          toast.success(result.message)
+          router.push("/admin/workspaces")
+        } else {
+          toast.error(result.error)
+        }
       }
-    } catch {
-      toast.error("Error procesando workspace")
-    } finally {
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Error procesando workspace")
       setLoading(false)
     }
   }

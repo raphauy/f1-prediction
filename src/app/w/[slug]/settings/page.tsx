@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import { SettingsForm } from "./settings-form"
+import { SettingsWrapper } from "./settings-wrapper"
 import { SettingsSkeleton } from "./settings-skeleton"
 
 interface SettingsPageProps {
@@ -19,7 +19,7 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
       </div>
 
       <Suspense fallback={<SettingsSkeleton />}>
-        <SettingsForm slug={slug} />
+        <SettingsWrapper slug={slug} />
       </Suspense>
     </div>
   )

@@ -2,13 +2,19 @@
 
 import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
+import { redirect } from "next/navigation"
 import { 
   createWorkspace, 
   updateWorkspace, 
   deleteWorkspace,
   getWorkspaceBySlug,
+  updateWorkspaceImage,
   type CreateWorkspaceData 
 } from "@/services/workspace-service"
+import {
+  replaceWorkspaceImage,
+  deleteImage,
+} from '@/services/upload-service'
 
 export async function createWorkspaceAction(formData: FormData) {
   try {
@@ -74,7 +80,8 @@ export async function updateWorkspaceAction(workspaceId: string, formData: FormD
     })
 
     revalidatePath("/admin/workspaces")
-    return { success: true, message: "Workspace actualizado correctamente" }
+    revalidatePath(`/w/${slug}`)
+    redirect("/admin/workspaces")
   } catch (error) {
     console.error("Error actualizando workspace:", error)
     return { 
@@ -101,6 +108,92 @@ export async function deleteWorkspaceAction(workspaceId: string) {
     return { 
       success: false, 
       error: error instanceof Error ? error.message : "Error eliminando workspace" 
+    }
+  }
+}
+
+export async function uploadWorkspaceImageAdminAction(workspaceId: string, formData: FormData) {
+  try {
+    const session = await auth()
+    
+    if (!session?.user || session.user.role !== "superadmin") {
+      throw new Error("No autorizado")
+    }
+
+    const file = formData.get('image') as File
+    if (!file || file.size === 0) {
+      throw new Error('No se proporcionó ninguna imagen')
+    }
+
+    // Obtener workspace actual para ver si tiene imagen
+    const { getWorkspaceById } = await import("@/services/workspace-service")
+    const workspace = await getWorkspaceById(workspaceId)
+    if (!workspace) {
+      throw new Error('Workspace no encontrado')
+    }
+
+    // Subir nueva imagen y eliminar la anterior si existe
+    const result = await replaceWorkspaceImage({
+      file,
+      workspaceId: workspaceId,
+      folder: 'workspaces',
+      currentImageUrl: workspace.image || undefined,
+    })
+
+    // Actualizar la URL de la imagen en la base de datos
+    await updateWorkspaceImage(workspaceId, result.url)
+    
+    revalidatePath('/admin/workspaces')
+    revalidatePath(`/admin/workspaces/${workspaceId}/edit`)
+    revalidatePath('/w')
+    
+    return { success: true, url: result.url, message: "Imagen actualizada correctamente" }
+  } catch (error) {
+    console.error('Error uploading workspace image:', error)
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Error al subir la imagen" 
+    }
+  }
+}
+
+export async function deleteWorkspaceImageAdminAction(workspaceId: string) {
+  try {
+    const session = await auth()
+    
+    if (!session?.user || session.user.role !== "superadmin") {
+      throw new Error("No autorizado")
+    }
+
+    // Obtener workspace actual
+    const { getWorkspaceById } = await import("@/services/workspace-service")
+    const workspace = await getWorkspaceById(workspaceId)
+    if (!workspace) {
+      throw new Error('Workspace no encontrado')
+    }
+
+    // Eliminar imagen de Vercel Blob si existe
+    if (workspace.image) {
+      try {
+        await deleteImage({ url: workspace.image })
+      } catch (error) {
+        console.warn('Could not delete workspace image from storage:', error)
+      }
+    }
+
+    // Actualizar la base de datos
+    await updateWorkspaceImage(workspaceId, null)
+    
+    revalidatePath('/admin/workspaces')
+    revalidatePath(`/admin/workspaces/${workspaceId}/edit`)
+    revalidatePath('/w')
+    
+    return { success: true, message: "Imagen eliminada correctamente" }
+  } catch (error) {
+    console.error('Error deleting workspace image:', error)
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Error al eliminar la imagen" 
     }
   }
 }

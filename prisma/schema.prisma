@@ -29,6 +29,10 @@ model User {
   // Relación con invitaciones enviadas
   invitations WorkspaceInvitation[]
   
+  // Relaciones F1
+  predictions    Prediction[]
+  seasonStandings SeasonStanding[]
+  
   @@map("users")
 }
 
@@ -51,6 +55,7 @@ model Workspace {
   name        String
   slug        String   @unique
   description String?
+  image       String?  // URL de imagen del workspace
   settings    Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -60,6 +65,9 @@ model Workspace {
   
   // Relación con invitaciones
   invitations WorkspaceInvitation[]
+  
+  // Relaciones F1
+  workspaceSeasons WorkspaceSeason[]
   
   @@map("workspaces")
 }
@@ -107,4 +115,150 @@ model WorkspaceInvitation {
   @@index([email])
   @@index([token])
   @@map("workspace_invitations")
+}
+
+// ============================================
+// MODELOS F1 - SISTEMA DE PREDICCIONES
+// ============================================
+
+model Season {
+  id          String   @id @default(cuid())
+  year        Int      @unique
+  name        String   // "F1 2025 Season"
+  isActive    Boolean  @default(false)
+  startDate   DateTime
+  endDate     DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relaciones
+  grandPrix        GrandPrix[]
+  workspaceSeasons WorkspaceSeason[]
+  
+  @@index([year])
+  @@map("seasons")
+}
+
+model WorkspaceSeason {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  seasonId      String
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relaciones
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  season        Season    @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  standings     SeasonStanding[]
+  predictions   Prediction[]
+  
+  @@unique([workspaceId, seasonId])
+  @@map("workspace_seasons")
+}
+
+model GrandPrix {
+  id             String   @id @default(cuid())
+  seasonId       String
+  round          Int      // Número de carrera en la temporada
+  name           String   // "Australian Grand Prix"
+  location       String   // "Melbourne"
+  country        String   // "Australia"
+  circuit        String   // "Albert Park"
+  raceDate       DateTime
+  qualifyingDate DateTime
+  isSprint       Boolean  @default(false)
+  timezone       String   // "Australia/Melbourne"
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  // Relaciones
+  season        Season       @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  gpQuestions   GPQuestion[]
+  predictions   Prediction[]
+  
+  @@index([seasonId, round])
+  @@map("grand_prix")
+}
+
+model Question {
+  id            String       @id @default(cuid())
+  text          String       // "¿Quién ganará la carrera?"
+  type          QuestionType
+  defaultPoints Int          @default(10)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  
+  // Relaciones
+  gpQuestions   GPQuestion[]
+  
+  @@map("questions")
+}
+
+model GPQuestion {
+  id            String   @id @default(cuid())
+  grandPrixId   String
+  questionId    String
+  points        Int      // Puntos específicos para este GP
+  order         Int      // Orden de aparición en el formulario
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relaciones
+  grandPrix     GrandPrix    @relation(fields: [grandPrixId], references: [id], onDelete: Cascade)
+  question      Question     @relation(fields: [questionId], references: [id])
+  predictions   Prediction[]
+  
+  @@unique([grandPrixId, questionId])
+  @@map("gp_questions")
+}
+
+model Prediction {
+  id                 String   @id @default(cuid())
+  workspaceSeasonId  String
+  userId             String
+  grandPrixId        String
+  gpQuestionId       String
+  answer             String   // Respuesta del usuario (nombre del piloto, equipo, etc.)
+  earnedPoints       Int?     // Puntos ganados (null hasta que se ingresen resultados)
+  submittedAt        DateTime @default(now())
+  
+  // Relaciones
+  workspaceSeason    WorkspaceSeason @relation(fields: [workspaceSeasonId], references: [id], onDelete: Cascade)
+  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  grandPrix          GrandPrix       @relation(fields: [grandPrixId], references: [id])
+  gpQuestion         GPQuestion      @relation(fields: [gpQuestionId], references: [id])
+  
+  @@unique([workspaceSeasonId, userId, grandPrixId, gpQuestionId])
+  @@index([workspaceSeasonId, userId])
+  @@map("predictions")
+}
+
+model SeasonStanding {
+  id                 String   @id @default(cuid())
+  workspaceSeasonId  String
+  userId             String
+  totalPoints        Int      @default(0)
+  position           Int?     // Posición en la tabla (se calcula)
+  predictionsCount   Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  
+  // Relaciones
+  workspaceSeason    WorkspaceSeason @relation(fields: [workspaceSeasonId], references: [id], onDelete: Cascade)
+  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([workspaceSeasonId, userId])
+  @@map("season_standings")
+}
+
+// Enum para tipos de preguntas
+enum QuestionType {
+  WINNER        // Ganador de carrera
+  PODIUM        // Top 3
+  FASTEST_LAP   // Vuelta rápida
+  POLE_POSITION // Pole en clasificación
+  DNF           // Did Not Finish
+  POINTS_FINISH // Terminar en puntos
+  TEAM_WINNER   // Equipo ganador
 }

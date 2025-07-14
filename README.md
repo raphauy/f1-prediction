@@ -1,4 +1,4 @@
-# RC Starter Kit
+# F1 Predictions Game
 
 Un starter kit completo para aplicaciones NextJS con autenticación OTP, gestión de workspaces y panel de administración.
 
@@ -102,8 +102,7 @@ NEXTAUTH_SECRET="tu-secret-super-secreto"
 RESEND_API_KEY="re_..."
 RESEND_FROM_EMAIL="notifications@tudominio.com"
 
-# App
-APP_NAME="RC Starter Kit"
+# La variable APP_NAME ya no es necesaria
 ```
 
 4. **Configurar la base de datos**

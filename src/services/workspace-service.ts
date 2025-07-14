@@ -8,7 +8,8 @@ export const createWorkspaceSchema = z.object({
   slug: z.string()
     .min(1, "Slug requerido")
     .regex(/^[a-z0-9-]+$/, "Solo letras minúsculas, números y guiones"),
-  description: z.string().optional()
+  description: z.string().optional(),
+  image: z.string().optional()
 })
 
 export const updateWorkspaceSchema = createWorkspaceSchema.partial()
@@ -98,7 +99,7 @@ export async function getUserWorkspaces(userId: string): Promise<(WorkspaceUser 
   if (user?.role === "superadmin") {
     // Superadmin tiene acceso a todos los workspaces
     const allWorkspaces = await prisma.workspace.findMany({
-      orderBy: { createdAt: 'desc' }
+      orderBy: { name: 'asc' }
     })
     
     // Convertir a formato compatible con WorkspaceUser
@@ -119,7 +120,9 @@ export async function getUserWorkspaces(userId: string): Promise<(WorkspaceUser 
       workspace: true
     },
     orderBy: {
-      createdAt: 'desc'
+      workspace: {
+        name: 'asc'
+      }
     }
   })
 }
@@ -159,6 +162,16 @@ export async function updateWorkspace(id: string, data: UpdateWorkspaceData): Pr
   return await prisma.workspace.update({
     where: { id },
     data: validated
+  })
+}
+
+/**
+ * Actualiza solo la imagen de un workspace
+ */
+export async function updateWorkspaceImage(id: string, imageUrl: string | null): Promise<Workspace> {
+  return await prisma.workspace.update({
+    where: { id },
+    data: { image: imageUrl }
   })
 }
 

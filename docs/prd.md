@@ -47,7 +47,7 @@
 ### 👥 **Gestión Colaborativa de Workspaces**
 - **Qué hace**: Sistema de invitaciones, roles (admin/miembro), gestión de participantes por temporada
 - **Por qué importa**: Facilita la organización grupal y administración de competencias
-- **Cómo funciona**: Integración con sistema de workspaces existente del RC Starter Kit
+- **Cómo funciona**: Integración con sistema de workspaces existente del starter kit
 
 ### 📊 **Tablas de Clasificación en Tiempo Real**
 - **Qué hace**: Muestra rankings actualizados por temporada, estadísticas por GP, progreso histórico
@@ -113,7 +113,7 @@
 ## Technical Requirements
 
 ### 🏗️ **Arquitectura Base**
-- **Framework**: Next.js 15 con App Router (heredado del RC Starter Kit)
+- **Framework**: Next.js 15 con App Router (heredado del starter kit)
 - **Base de datos**: PostgreSQL con Prisma ORM
 - **Autenticación**: NextAuth.js v5 con OTP por email
 - **UI**: shadcn/ui + Tailwind CSS v4 (responsive/mobile-first)
