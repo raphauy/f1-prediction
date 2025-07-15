@@ -34,42 +34,49 @@ const adminNavItems = [
   {
     title: "Dashboard",
     href: "/admin",
-    icon: Home
+    icon: Home,
+    disabled: false
   },
   {
     title: "Usuarios",
     href: "/admin/users", 
     icon: Users,
-    badge: "users"
+    badge: "users",
+    disabled: false
   },
   {
-    title: "Workspaces",
+    title: "Juegos",
     href: "/admin/workspaces",
     icon: Building2,
-    badge: "workspaces"
+    badge: "workspaces",
+    disabled: false
   },
   {
     title: "Temporadas F1",
     href: "/admin/seasons",
     icon: Trophy,
-    badge: "seasons"
+    badge: "seasons",
+    disabled: false
   },
   {
     title: "Grand Prix",
     href: "/admin/grand-prix",
     icon: Flag,
-    badge: "grandprix"
+    badge: "grandprix",
+    disabled: false
   },
   {
     title: "Plantillas",
     href: "/admin/question-templates",
     icon: HelpCircle,
-    badge: "templates"
+    badge: "templates",
+    disabled: false
   },
   {
     title: "Configuración",
     href: "/admin/settings",
-    icon: Settings
+    icon: Settings,
+    disabled: true
   }
 ]
 
@@ -122,6 +129,23 @@ export function AdminSidebarClient({ children, userCount, workspaceCount, season
               <SidebarMenu>
                 {adminNavItems.map((item) => {
                   const Icon = item.icon
+                  
+                  if (item.disabled) {
+                    return (
+                      <SidebarMenuItem key={item.href}>
+                        <SidebarMenuButton
+                          disabled
+                          isActive={false}
+                          tooltip={item.title}
+                          className="opacity-50 cursor-not-allowed"
+                        >
+                          <Icon />
+                          <span>{item.title}</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    )
+                  }
+                  
                   return (
                     <SidebarMenuItem key={item.href}>
                       <SidebarMenuButton
@@ -152,11 +176,11 @@ export function AdminSidebarClient({ children, userCount, workspaceCount, season
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    tooltip="Ver Todos los Workspaces"
+                    tooltip="Ver Todos los Juegos"
                   >
                     <Link href="/w" className="text-blue-600 hover:text-blue-800">
                       <ExternalLink />
-                      <span>Todos los Workspaces</span>
+                      <span>Todos los Juegos</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

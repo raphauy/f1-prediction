@@ -52,7 +52,7 @@ export function MemberActionsClient({
 
   const isCurrentlyAdmin = workspaceUser.role === "admin"
   const newRole = isCurrentlyAdmin ? "member" : "admin"
-  const newRoleText = isCurrentlyAdmin ? "Miembro" : "Admin"
+  const newRoleText = isCurrentlyAdmin ? "Competidor" : "Admin"
 
   const handleRoleChange = async () => {
     setIsLoading(true)
@@ -91,7 +91,7 @@ export function MemberActionsClient({
       const result = await removeMemberAction(formData)
 
       if (result.success) {
-        toast.success("Usuario removido del workspace exitosamente")
+        toast.success("Competidor removido del juego exitosamente")
         setShowRemoveDialog(false)
         setIsOpen(false)
       } else {
@@ -122,7 +122,7 @@ export function MemberActionsClient({
             {isCurrentlyAdmin ? (
               <>
                 <User className="mr-2 h-4 w-4" />
-                Cambiar a Miembro
+                Cambiar a Competidor
               </>
             ) : (
               <>
@@ -136,7 +136,7 @@ export function MemberActionsClient({
             className="cursor-pointer text-red-600 focus:text-red-600"
           >
             <Trash2 className="mr-2 h-4 w-4" />
-            Remover del workspace
+            Sacarlo del juego
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -151,7 +151,7 @@ export function MemberActionsClient({
               <strong>{workspaceUser.user.name || workspaceUser.user.email}</strong>{" "}
               de{" "}
               <Badge variant={isCurrentlyAdmin ? "default" : "secondary"} className="mx-1">
-                {isCurrentlyAdmin ? "Admin" : "Miembro"}
+                {isCurrentlyAdmin ? "Admin" : "Competidor"}
               </Badge>
               {" "}a{" "}
               <Badge variant={!isCurrentlyAdmin ? "default" : "secondary"} className="mx-1">
@@ -189,11 +189,11 @@ export function MemberActionsClient({
       <Dialog open={showRemoveDialog} onOpenChange={setShowRemoveDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Remover usuario del workspace</DialogTitle>
+            <DialogTitle>Sacar competidor del juego</DialogTitle>
             <DialogDescription>
-              ¿Estás seguro de que quieres remover a{" "}
+              ¿Estás seguro de que quieres sacar a{" "}
               <strong>{workspaceUser.user.name || workspaceUser.user.email}</strong>{" "}
-              del workspace? Esta acción no se puede deshacer.
+              del juego? Esta acción no se puede deshacer.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -215,7 +215,7 @@ export function MemberActionsClient({
                   Removiendo...
                 </>
               ) : (
-                "Remover usuario"
+                "Sacar del juego"
               )}
             </Button>
           </DialogFooter>

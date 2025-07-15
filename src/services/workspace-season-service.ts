@@ -62,7 +62,7 @@ export async function getWorkspaceSeasonWithDetails(
   workspaceId: string, 
   seasonId: string
 ): Promise<WorkspaceSeasonWithDetails | null> {
-  return await prisma.workspaceSeason.findUnique({
+  const result = await prisma.workspaceSeason.findUnique({
     where: {
       workspaceId_seasonId: {
         workspaceId,
@@ -81,12 +81,14 @@ export async function getWorkspaceSeasonWithDetails(
       },
       _count: {
         select: {
-          predictions: true,
+          predictionPoints: true,
           standings: true
         }
       }
     }
   })
+
+  return result as WorkspaceSeasonWithDetails | null
 }
 
 /**

@@ -8,8 +8,7 @@ import {
 } from "@/services/workspace-season-service"
 import {
   getUserPredictionsForGP,
-  hasUserPredictedForGP,
-  createMultiplePredictions
+  hasUserPredictedForGP
 } from "@/services/prediction-service"
 import {
   getWorkspaceStandings,
@@ -19,7 +18,6 @@ import {
   getWorkspaceStats
 } from "@/services/standings-service"
 import { getWorkspaceBySlug } from "@/services/workspace-service"
-import { revalidatePath } from "next/cache"
 
 /**
  * Obtiene la información del dashboard F1 para un workspace
@@ -52,11 +50,10 @@ export async function getDashboardData(slug: string) {
 
   // Verificar si el usuario ya predijo para el próximo GP
   let hasUserPredicted = false
-  if (nextGP && activeSeason) {
+  if (nextGP) {
     hasUserPredicted = await hasUserPredictedForGP(
       session.user.id,
-      nextGP.id,
-      activeSeason.id
+      nextGP.id
     )
   }
 
@@ -92,59 +89,12 @@ export async function getUserPredictions(slug: string, grandPrixId: string) {
 
   return await getUserPredictionsForGP(
     session.user.id,
-    grandPrixId,
-    activeSeason.id
+    grandPrixId
   )
 }
 
-/**
- * Envía las predicciones del usuario
- */
-export async function submitPredictions(
-  slug: string,
-  grandPrixId: string,
-  predictions: Array<{ gpQuestionId: string; answer: string }>
-) {
-  const session = await auth()
-  if (!session?.user?.id) {
-    throw new Error("No autorizado")
-  }
-
-  const workspace = await getWorkspaceBySlug(slug)
-  if (!workspace) {
-    throw new Error("Workspace no encontrado")
-  }
-
-  const activeSeason = await getActiveSeasonForWorkspace(workspace.id)
-  if (!activeSeason) {
-    throw new Error("No hay temporada activa")
-  }
-
-  // Verificar si ya predijo
-  const alreadyPredicted = await hasUserPredictedForGP(
-    session.user.id,
-    grandPrixId,
-    activeSeason.id
-  )
-
-  if (alreadyPredicted) {
-    throw new Error("Ya realizaste predicciones para este GP")
-  }
-
-  // Crear predicciones
-  await createMultiplePredictions({
-    workspaceSeasonId: activeSeason.id,
-    userId: session.user.id,
-    grandPrixId,
-    predictions
-  })
-
-  // Revalidar páginas
-  revalidatePath(`/w/${slug}`)
-  revalidatePath(`/w/${slug}/predictions`)
-  
-  return { success: true }
-}
+// Función removida: submitPredictions ya no es necesaria
+// Las predicciones ahora se manejan individualmente desde la página de predicciones
 
 /**
  * Obtiene la tabla completa de clasificación

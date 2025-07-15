@@ -19,7 +19,7 @@ export function SeasonsTableSkeleton() {
             <TableHead>Fecha Inicio</TableHead>
             <TableHead>Fecha Fin</TableHead>
             <TableHead>Grand Prix</TableHead>
-            <TableHead>Workspaces</TableHead>
+            <TableHead>Juegos</TableHead>
             <TableHead>Estado</TableHead>
             <TableHead className="w-[70px]"></TableHead>
           </TableRow>

@@ -41,13 +41,15 @@ export function WorkspaceNavClient({
       icon: BarChart3,
       isActive: pathname === `/w/${workspaceSlug}`,
       showForMembers: true,
+      disabled: false,
     },
     {
       label: "Predicciones",
       href: `/w/${workspaceSlug}/predictions`,
       icon: Target,
-      isActive: pathname === `/w/${workspaceSlug}/predictions`,
+      isActive: pathname.startsWith(`/w/${workspaceSlug}/predictions`),
       showForMembers: true,
+      disabled: false,
     },
     {
       label: "Clasificación",
@@ -55,6 +57,7 @@ export function WorkspaceNavClient({
       icon: Trophy,
       isActive: pathname === `/w/${workspaceSlug}/standings`,
       showForMembers: true,
+      disabled: true,
     },
     {
       label: "Calendario",
@@ -62,6 +65,7 @@ export function WorkspaceNavClient({
       icon: Calendar,
       isActive: pathname === `/w/${workspaceSlug}/calendar`,
       showForMembers: true,
+      disabled: true,
     },
     {
       label: "Competidores",
@@ -69,6 +73,7 @@ export function WorkspaceNavClient({
       icon: Users,
       isActive: pathname === `/w/${workspaceSlug}/members`,
       showForMembers: true,
+      disabled: false,
     },
     {
       label: "Configuración",
@@ -76,6 +81,7 @@ export function WorkspaceNavClient({
       icon: Settings,
       isActive: pathname === `/w/${workspaceSlug}/settings`,
       showForMembers: false,
+      disabled: false,
     },
   ].filter(item => isAdmin || item.showForMembers)
 
@@ -100,6 +106,22 @@ export function WorkspaceNavClient({
           
           {navItems.map((item) => {
             const Icon = item.icon
+            
+            if (item.disabled) {
+              return (
+                <Button
+                  key={item.href}
+                  variant="ghost"
+                  size="sm"
+                  disabled
+                  className="opacity-50 cursor-not-allowed"
+                >
+                  <Icon className="h-4 w-4 mr-2" />
+                  <span>{item.label}</span>
+                </Button>
+              )
+            }
+            
             return (
               <Button
                 key={item.href}

@@ -51,14 +51,14 @@
 **Estimated Duration:** 5-6 days
 
 **Tasks:**
-- [ ] Design mobile-first prediction form interface
-- [ ] Implement dropdown components for driver/team selection
-- [ ] Create prediction submission server actions
-- [ ] Add deadline enforcement on client and server
-- [ ] Build prediction confirmation and review screens
-- [ ] Implement prediction history viewing
-- [ ] Add form validation and error handling
-- [ ] Create loading states and optimistic updates
+- [x] Design mobile-first prediction form interface
+- [x] Implement dropdown components for driver/team selection
+- [x] Create prediction submission server actions
+- [x] Add deadline enforcement on client and server
+- [x] Build prediction confirmation and review screens
+- [x] Implement prediction history viewing
+- [x] Add form validation and error handling
+- [x] Create loading states and optimistic updates
 
 **Acceptance Criteria:**
 - Users can submit predictions before deadline on mobile devices

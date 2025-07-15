@@ -17,14 +17,14 @@ export async function WorkspaceList() {
       <div className="text-center py-12">
         <div className="mx-auto max-w-md">
           <h3 className="text-lg font-medium mb-2">
-            No tienes workspaces
+            No estás en ningún juego
           </h3>
           <p className="text-muted-foreground mb-6">
-            Ponte en contacto con un administrador para que te invite a un workspace
+            Ponte en contacto con un administrador para que te invite a un juego
           </p>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              O si eres administrador del sistema, puedes crear workspaces desde el panel de administración
+              O si eres administrador del sistema, puedes crear juegos desde el panel de administración
             </p>
           </div>
         </div>
@@ -39,10 +39,10 @@ export async function WorkspaceList() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-medium">
-              Workspaces Disponibles
+              Juegos en los que estoy compitiendo
             </h2>
             <p className="text-sm text-muted-foreground">
-              Tienes acceso a {userWorkspaces.length} workspace{userWorkspaces.length !== 1 ? 's' : ''}
+              Tienes acceso a {userWorkspaces.length} juego{userWorkspaces.length !== 1 ? 's' : ''}
             </p>
           </div>
         </div>

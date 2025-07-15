@@ -52,7 +52,7 @@ export async function MembersList({ slug }: MembersListProps) {
     ) : (
       <Badge variant="secondary">
         <User className="w-3 h-3 mr-1" />
-        Miembro
+        Competidor
       </Badge>
     )
   }
@@ -71,9 +71,9 @@ export async function MembersList({ slug }: MembersListProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Miembros del Workspace</CardTitle>
+              <CardTitle>Competidores de este juego</CardTitle>
               <CardDescription>
-                {workspaceUsers.length} miembro{workspaceUsers.length !== 1 ? 's' : ''} en {workspace.name}
+                {workspaceUsers.length} competidor{workspaceUsers.length !== 1 ? 'es' : ''} en {workspace.name}
               </CardDescription>
             </div>
             {isCurrentUserAdmin && (
@@ -99,7 +99,7 @@ export async function MembersList({ slug }: MembersListProps) {
                 {workspaceUsers.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={isCurrentUserAdmin ? 5 : 4} className="text-center text-muted-foreground">
-                      No hay miembros en este workspace
+                      No hay participantes en este juego
                     </TableCell>
                   </TableRow>
                 ) : (

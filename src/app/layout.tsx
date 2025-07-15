@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "F1 Predictions Game",
+  title: "Paddock Masters",
   description: "Plataforma de predicciones de Fórmula 1 para competir con amigos",
 };
 

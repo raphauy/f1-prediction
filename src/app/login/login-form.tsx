@@ -93,7 +93,7 @@ export function LoginForm() {
     <Card className="w-full border-gray-200">
       <CardHeader className="text-center border-b border-gray-100 py-6">
         <CardTitle className="text-2xl font-bold">
-          F1 Predictions Game <span className="text-red-500">🏁</span>
+          Paddock Masters <span className="text-red-500">🏁</span>
         </CardTitle>
         <CardDescription>
           {step === "email" 

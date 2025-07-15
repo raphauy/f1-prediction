@@ -80,7 +80,7 @@ export function SettingsForm({ workspace }: SettingsFormProps) {
   }
 
   const handleDeleteWorkspace = async () => {
-    if (!confirm(`¿Estás seguro de eliminar el workspace "${workspace.name}"? Esta acción no se puede deshacer.`)) {
+    if (!confirm(`¿Estás seguro de eliminar el juego "${workspace.name}"? Esta acción no se puede deshacer.`)) {
       return
     }
 
@@ -89,7 +89,7 @@ export function SettingsForm({ workspace }: SettingsFormProps) {
       await deleteWorkspaceAction(workspace.slug)
       toast.success('Workspace eliminado correctamente')
     } catch {
-      toast.error('Error al eliminar el workspace')
+      toast.error('Error al eliminar el juego')
       setIsDeletingWorkspace(false)
     }
   }
@@ -251,10 +251,10 @@ export function SettingsForm({ workspace }: SettingsFormProps) {
         <CardContent className="space-y-4">
           <div className="p-4 border border-destructive/50 rounded-lg bg-destructive/5">
             <h4 className="font-medium text-destructive mb-2">
-              Eliminar Workspace
+              Eliminar Juego
             </h4>
             <p className="text-sm text-muted-foreground mb-4">
-              Esta acción eliminará permanentemente el workspace y todos sus datos. 
+              Esta acción eliminará permanentemente el juego y todos sus datos. 
               Esta acción no se puede deshacer.
             </p>
             <Button 
@@ -263,7 +263,7 @@ export function SettingsForm({ workspace }: SettingsFormProps) {
               onClick={handleDeleteWorkspace}
               disabled={isDeletingWorkspace}
             >
-              {isDeletingWorkspace ? 'Eliminando...' : 'Eliminar Workspace'}
+              {isDeletingWorkspace ? 'Eliminando...' : 'Eliminar Juego'}
             </Button>
           </div>
         </CardContent>

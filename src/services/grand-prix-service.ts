@@ -650,3 +650,33 @@ export async function createPilotFocusQuestions(grandPrixId: string, pilotName: 
 
   return createdQuestions
 }
+
+/**
+ * Obtiene un Grand Prix por ID con todas sus relaciones
+ */
+export async function getGPById(id: string): Promise<GrandPrixWithDetails | null> {
+  const gp = await prisma.grandPrix.findUnique({
+    where: { id },
+    include: {
+      season: true,
+      gpQuestions: {
+        include: {
+          question: true
+        },
+        orderBy: [
+          { order: 'asc' },
+          { id: 'asc' }
+        ]
+      },
+      _count: {
+        select: {
+          predictions: true
+        }
+      }
+    }
+  })
+
+  if (!gp) return null
+
+  return addFormattedDates(gp)
+}

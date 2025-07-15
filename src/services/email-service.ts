@@ -28,9 +28,9 @@ export async function sendWorkspaceInvitationEmail(input: SendInvitationEmailInp
     const fromEmail = process.env.RESEND_FROM_EMAIL || "notifications@raphauy.dev"
     
     const { data, error } = await resend.emails.send({
-      from: `F1 Predictions Game <${fromEmail}>`,
+      from: `Paddock Masters <${fromEmail}>`,
       to: [validatedInput.to],
-      subject: `Invitación a "${validatedInput.workspaceName}" en F1 Predictions Game`,
+      subject: `Invitación a "${validatedInput.workspaceName}" en Paddock Masters`,
       react: WorkspaceInvitationEmail({
         invitedUserEmail: validatedInput.to,
         inviterName: validatedInput.inviterName,
@@ -91,9 +91,9 @@ export async function sendOtpEmail(input: SendOtpEmailInput) {
     const fromEmail = process.env.RESEND_FROM_EMAIL || "notifications@raphauy.dev"
     
     const { data, error } = await resend.emails.send({
-      from: `F1 Predictions Game <${fromEmail}>`,
+      from: `Paddock Masters <${fromEmail}>`,
       to: [validatedInput.to],
-      subject: `Tu código de verificación de F1 Predictions Game`,
+      subject: `Tu código de verificación de Paddock Masters`,
       react: OtpEmail({
         otp: validatedInput.otp
       }),

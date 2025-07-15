@@ -29,7 +29,7 @@ export function WorkspaceCard({ workspace, userRole, isSuperadmin = false }: Wor
       </Badge>
     ) : (
       <Badge variant="secondary">
-        Miembro
+        Competidor
       </Badge>
     )
   }

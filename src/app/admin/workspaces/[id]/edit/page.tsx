@@ -19,9 +19,9 @@ export default async function EditWorkspacePage({ params }: EditWorkspacePagePro
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Editar Workspace</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Editar Juego</h1>
         <p className="text-muted-foreground">
-          Modifica la configuración del workspace {workspace.name}
+          Modifica la configuración del juego {workspace.name}
         </p>
       </div>
 

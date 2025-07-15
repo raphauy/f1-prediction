@@ -11,9 +11,9 @@ export default function WorkspacesPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-start">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Gestión de Workspaces</h2>
+          <h2 className="text-3xl font-bold tracking-tight">Gestión de Juegos</h2>
           <p className="text-muted-foreground">
-            Administra los workspaces del sistema y sus usuarios
+            Administra los juegos del sistema y sus participantes
           </p>
         </div>
         <div className="flex gap-2">
@@ -26,7 +26,7 @@ export default function WorkspacesPage() {
           <Button asChild>
             <Link href="/admin/workspaces/new">
               <Plus className="h-4 w-4 mr-2" />
-              Nuevo Workspace
+              Nuevo Juego
             </Link>
           </Button>
         </div>
@@ -34,9 +34,9 @@ export default function WorkspacesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Workspaces</CardTitle>
+          <CardTitle>Lista de Juegos</CardTitle>
           <CardDescription>
-            Todos los workspaces creados en el sistema
+            Todos los juegos creados en el sistema
           </CardDescription>
         </CardHeader>
         <CardContent>

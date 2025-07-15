@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Upload, Loader2, User, Save } from "lucide-react"
+import { Upload, Loader2, User, Save, ArrowLeft } from "lucide-react"
 import { toast } from "sonner"
 import { updateProfileAction, uploadProfileImageAction } from "./actions"
 import { useRouter } from "next/navigation"
@@ -96,7 +96,8 @@ export function ProfileForm({ user }: ProfileFormProps) {
         
         // Pequeño delay para asegurar que la sesión se actualice
         setTimeout(() => {
-          router.refresh() // Refrescar para mostrar cambios en header
+          router.push('/w') // Redirigir a workspaces
+          router.refresh() // Refrescar para mostrar cambios
         }, 100)
       } else {
         toast.error(result.error || "Error al actualizar el perfil")
@@ -233,8 +234,18 @@ export function ProfileForm({ user }: ProfileFormProps) {
         </CardContent>
       </Card>
 
-      {/* Botón de guardar */}
-      <div className="flex justify-end">
+      {/* Botones de acción */}
+      <div className="flex justify-between">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => router.push('/w')}
+          disabled={isLoading}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Volver
+        </Button>
+        
         <Button
           type="submit"
           disabled={isLoading || !name.trim()}

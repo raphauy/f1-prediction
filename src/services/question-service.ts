@@ -449,3 +449,14 @@ export async function createPilotFocusQuestionsForGP(grandPrixId: string, pilotN
 
 // Re-exportar la función de crear desde plantilla para facilitar el uso
 export const createGPQuestionFromTemplate = createFromTemplate
+
+// Obtener una GPQuestion por ID
+export async function getGPQuestionById(id: string) {
+  return await prisma.gPQuestion.findUnique({
+    where: { id },
+    include: {
+      question: true,
+      grandPrix: true
+    }
+  })
+}

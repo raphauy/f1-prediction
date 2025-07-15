@@ -13,10 +13,10 @@ export const F1_DRIVERS_2025: F1DriverType[] = [
     imageUrl: "https://flsu53ntc8dvexn0.public.blob.vercel-storage.com/drivers/max-verstappen.png"
   },
   {
-    name: "Liam Lawson",
+    name: "Yuki Tsunoda",
     team: "Red Bull",
-    number: 30,
-    imageUrl: "https://flsu53ntc8dvexn0.public.blob.vercel-storage.com/drivers/liam-lawson.png"
+    number: 22,
+    imageUrl: "https://flsu53ntc8dvexn0.public.blob.vercel-storage.com/drivers/yuki-tsunoda.png"
   },
   {
     name: "Lando Norris",
@@ -73,16 +73,10 @@ export const F1_DRIVERS_2025: F1DriverType[] = [
     imageUrl: "https://flsu53ntc8dvexn0.public.blob.vercel-storage.com/drivers/pierre-gasly.png"
   },
   {
-    name: "Jack Doohan",
-    team: "Alpine",
-    number: 61,
-    imageUrl: "https://flsu53ntc8dvexn0.public.blob.vercel-storage.com/drivers/jack-doohan.png"
-  },
-  {
-    name: "Yuki Tsunoda",
+    name: "Liam Lawson",
     team: "RB",
-    number: 22,
-    imageUrl: "https://flsu53ntc8dvexn0.public.blob.vercel-storage.com/drivers/yuki-tsunoda.png"
+    number: 30,
+    imageUrl: "https://flsu53ntc8dvexn0.public.blob.vercel-storage.com/drivers/liam-lawson.png"
   },
   {
     name: "Isack Hadjar",
@@ -169,6 +163,12 @@ export const F1_FORMER_DRIVERS_2025: F1DriverType[] = [
     team: "Haas",
     number: 20,
     imageUrl: "https://flsu53ntc8dvexn0.public.blob.vercel-storage.com/drivers/kevin-magnussen.png"
+  },
+  {
+    name: "Jack Doohan",
+    team: "Alpine",
+    number: 61,
+    imageUrl: "https://flsu53ntc8dvexn0.public.blob.vercel-storage.com/drivers/jack-doohan.png"
   },
   {
     name: "Sergio Pérez",

@@ -90,7 +90,6 @@ export function WorkspaceActionsClient({ workspace }: WorkspaceActionsClientProp
         
         <DropdownMenuSeparator />
         
-        {/* Eliminar workspace */}
         <DropdownMenuItem
           onClick={() => setShowDeleteDialog(true)}
           className="text-red-600 focus:text-red-600"
@@ -104,9 +103,9 @@ export function WorkspaceActionsClient({ workspace }: WorkspaceActionsClientProp
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>¿Eliminar workspace?</DialogTitle>
+            <DialogTitle>¿Eliminar juego?</DialogTitle>
             <DialogDescription>
-              ¿Estás seguro de que quieres eliminar el workspace <strong>{workspace.name}</strong>? 
+              ¿Estás seguro de que quieres eliminar el juego <strong>{workspace.name}</strong>? 
               Esta acción eliminará todos los datos asociados y no se puede deshacer.
             </DialogDescription>
           </DialogHeader>

@@ -175,7 +175,6 @@ export async function getWorkspaceSeasons(workspaceId: string) {
       },
       _count: {
         select: {
-          predictions: true,
           standings: true,
         },
       },

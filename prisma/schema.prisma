@@ -148,10 +148,10 @@ model WorkspaceSeason {
   updatedAt     DateTime @updatedAt
   
   // Relaciones
-  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  season        Season    @relation(fields: [seasonId], references: [id], onDelete: Cascade)
-  standings     SeasonStanding[]
-  predictions   Prediction[]
+  workspace        Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  season           Season             @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  standings        SeasonStanding[]
+  predictionPoints PredictionPoints[]
   
   @@unique([workspaceId, seasonId])
   @@map("workspace_seasons")
@@ -254,23 +254,39 @@ model GPQuestion {
 
 model Prediction {
   id                 String   @id @default(cuid())
-  workspaceSeasonId  String
   userId             String
   grandPrixId        String
   gpQuestionId       String
   answer             String   // Respuesta del usuario (nombre del piloto, equipo, etc.)
-  earnedPoints       Int?     // Puntos ganados (null hasta que se ingresen resultados)
   submittedAt        DateTime @default(now())
+  updatedAt          DateTime @updatedAt
   
   // Relaciones
-  workspaceSeason    WorkspaceSeason @relation(fields: [workspaceSeasonId], references: [id], onDelete: Cascade)
-  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  grandPrix          GrandPrix       @relation(fields: [grandPrixId], references: [id])
-  gpQuestion         GPQuestion      @relation(fields: [gpQuestionId], references: [id])
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  grandPrix          GrandPrix          @relation(fields: [grandPrixId], references: [id])
+  gpQuestion         GPQuestion         @relation(fields: [gpQuestionId], references: [id])
+  earnedPoints       PredictionPoints[]
   
-  @@unique([workspaceSeasonId, userId, grandPrixId, gpQuestionId])
-  @@index([workspaceSeasonId, userId])
+  @@unique([userId, grandPrixId, gpQuestionId])
+  @@index([userId, grandPrixId])
   @@map("predictions")
+}
+
+model PredictionPoints {
+  id                 String   @id @default(cuid())
+  predictionId       String
+  workspaceSeasonId  String
+  points             Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  
+  // Relaciones
+  prediction         Prediction      @relation(fields: [predictionId], references: [id], onDelete: Cascade)
+  workspaceSeason    WorkspaceSeason @relation(fields: [workspaceSeasonId], references: [id], onDelete: Cascade)
+  
+  @@unique([predictionId, workspaceSeasonId])
+  @@index([workspaceSeasonId])
+  @@map("prediction_points")
 }
 
 model SeasonStanding {

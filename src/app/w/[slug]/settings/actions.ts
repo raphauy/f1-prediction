@@ -157,12 +157,11 @@ export async function deleteWorkspaceAction(slug: string) {
       }
     }
 
-    // Eliminar workspace
     await deleteWorkspace(workspace.id)
     
     redirect('/w')
   } catch (error) {
     console.error('Error deleting workspace:', error)
-    throw new Error('Error al eliminar el workspace')
+    throw new Error('Error al eliminar el juego')
   }
 }

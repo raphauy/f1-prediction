@@ -10,7 +10,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
   const { token } = await params
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 to-gray-50 flex items-center justify-center p-4">
       <Suspense fallback={<InviteLoading />}>
         <InviteAcceptance token={token} />
       </Suspense>

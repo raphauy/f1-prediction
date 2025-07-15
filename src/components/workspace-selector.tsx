@@ -100,7 +100,7 @@ export function WorkspaceSelector({
                 />
                 {!compact && (
                   <span className="font-medium text-sm text-muted-foreground">
-                    Seleccionar workspace
+                    Seleccionar juego
                   </span>
                 )}
               </>
@@ -113,10 +113,10 @@ export function WorkspaceSelector({
         </PopoverTrigger>
         <PopoverContent className="w-80 p-0" align="start">
           <Command>
-            <CommandInput placeholder="Buscar workspace..." />
+            <CommandInput placeholder="Buscar juego..." />
             <CommandList>
-              <CommandEmpty>No se encontraron workspaces.</CommandEmpty>
-              <CommandGroup heading="Mis Workspaces">
+              <CommandEmpty>No se encontraron juegos.</CommandEmpty>
+              <CommandGroup heading="Mis Juegos">
                 {userWorkspaces.map((item) => (
                   <CommandItem
                     key={item.workspace.id}

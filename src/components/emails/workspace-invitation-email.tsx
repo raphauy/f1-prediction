@@ -30,7 +30,7 @@ export default function WorkspaceInvitationEmail({
     <Html>
       <Head />
       <Preview>
-        {inviterName} te ha invitado a competir en &ldquo;{workspaceName}&rdquo; - F1 Predictions Game
+        {inviterName} te ha invitado a competir en &ldquo;{workspaceName}&rdquo; - Paddock Masters
       </Preview>
       <Tailwind>
         <Body className="bg-gray-100 font-sans">
@@ -51,7 +51,7 @@ export default function WorkspaceInvitationEmail({
                     className="text-lg font-bold m-0 text-white" 
                     style={{color: '#ffffff', margin: 0}}
                   >
-                    F1 Predictions Game
+                    Paddock Masters
                   </Heading>
                   <Text 
                     className="text-white mt-1 mb-0 text-sm opacity-90" 
@@ -122,10 +122,10 @@ export default function WorkspaceInvitationEmail({
               {/* Footer */}
               <Section className="bg-gray-50 px-4 py-3 border-t border-gray-200">
                 <Text className="text-gray-500 text-xs text-center m-0">
-                  Esta invitación fue enviada a {invitedUserEmail} por {inviterName} desde F1 Predictions Game.
+                  Esta invitación fue enviada a {invitedUserEmail} por {inviterName} desde Paddock Masters.
                 </Text>
                 <Text className="text-gray-400 text-xs text-center mt-1 mb-0">
-                  © 2024 F1 Predictions Game. Todos los derechos reservados.
+                  © 2024 Paddock Masters. Todos los derechos reservados.
                 </Text>
               </Section>
             </Section>

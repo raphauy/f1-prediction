@@ -60,7 +60,7 @@ export function InviteValid({ invitation, userState, session }: InviteValidProps
     ) : (
       <Badge variant="secondary">
         <User className="w-3 h-3 mr-1" />
-        Miembro
+        Competidor
       </Badge>
     )
   }
@@ -127,7 +127,7 @@ export function InviteValid({ invitation, userState, session }: InviteValidProps
           <Users className="h-6 w-6 text-red-600" />
         </div>
         <CardTitle className="text-xl font-semibold text-gray-900">
-          Invitación a F1 Predictions 🏁
+          Invitación a Paddock Masters 🏁
         </CardTitle>
         <CardDescription>
           Has sido invitado a competir en &ldquo;{invitation.workspace.name}&rdquo;

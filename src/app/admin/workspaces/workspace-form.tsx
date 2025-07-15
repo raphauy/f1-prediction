@@ -80,7 +80,7 @@ export function WorkspaceForm({ workspace, isEdit = false }: WorkspaceFormProps)
             id="name"
             name="name"
             type="text"
-            placeholder="Mi Workspace"
+            placeholder="Mi Juego"
             defaultValue={workspace?.name || ""}
             onChange={handleNameChange}
             required
@@ -93,7 +93,7 @@ export function WorkspaceForm({ workspace, isEdit = false }: WorkspaceFormProps)
             id="slug"
             name="slug"
             type="text"
-            placeholder="mi-workspace"
+            placeholder="mi-juego"
             defaultValue={workspace?.slug || ""}
             pattern="^[a-z0-9-]+$"
             title="Solo letras minúsculas, números y guiones"
@@ -110,7 +110,7 @@ export function WorkspaceForm({ workspace, isEdit = false }: WorkspaceFormProps)
         <Textarea
           id="description"
           name="description"
-          placeholder="Descripción del workspace (opcional)"
+          placeholder="Descripción del juego (opcional)"
           defaultValue={workspace?.description || ""}
           rows={3}
         />
@@ -120,7 +120,7 @@ export function WorkspaceForm({ workspace, isEdit = false }: WorkspaceFormProps)
         <Button type="submit" disabled={loading}>
           {loading 
             ? (isEdit ? "Actualizando..." : "Creando...") 
-            : (isEdit ? "Actualizar Workspace" : "Crear Workspace")
+            : (isEdit ? "Actualizar Juego" : "Crear Juego")
           }
         </Button>
         <Button 

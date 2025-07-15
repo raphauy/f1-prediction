@@ -41,7 +41,7 @@ export function WorkspaceEditForm({ workspace }: WorkspaceEditFormProps) {
     try {
       await updateWorkspaceAction(workspace.id, formData)
     } catch {
-      toast.error('Error al actualizar el workspace')
+      toast.error('Error al actualizar el juego')
       setIsUpdating(false)
     }
   }
@@ -91,7 +91,7 @@ export function WorkspaceEditForm({ workspace }: WorkspaceEditFormProps) {
   }
 
   const handleDeleteWorkspace = async () => {
-    if (!confirm(`¿Estás seguro de eliminar el workspace "${workspace.name}"? Esta acción no se puede deshacer.`)) {
+    if (!confirm(`¿Estás seguro de eliminar el juego "${workspace.name}"? Esta acción no se puede deshacer.`)) {
       return
     }
 
@@ -105,7 +105,7 @@ export function WorkspaceEditForm({ workspace }: WorkspaceEditFormProps) {
         setIsDeletingWorkspace(false)
       }
     } catch {
-      toast.error('Error al eliminar el workspace')
+      toast.error('Error al eliminar el juego')
       setIsDeletingWorkspace(false)
     }
   }
@@ -120,7 +120,7 @@ export function WorkspaceEditForm({ workspace }: WorkspaceEditFormProps) {
             <span>Configuración General</span>
           </CardTitle>
           <CardDescription>
-            Información básica del workspace
+            Información básica del juego
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -132,7 +132,7 @@ export function WorkspaceEditForm({ workspace }: WorkspaceEditFormProps) {
                   id="name"
                   name="name"
                   defaultValue={workspace.name}
-                  placeholder="Nombre del workspace"
+                  placeholder="Nombre del juego"
                   required
                   disabled={isUpdating}
                 />
@@ -143,7 +143,7 @@ export function WorkspaceEditForm({ workspace }: WorkspaceEditFormProps) {
                   id="slug"
                   name="slug"
                   defaultValue={workspace.slug}
-                  placeholder="workspace-slug"
+                  placeholder="juego-slug"
                   pattern="^[a-z0-9-]+$"
                   title="Solo letras minúsculas, números y guiones"
                   required
@@ -161,7 +161,7 @@ export function WorkspaceEditForm({ workspace }: WorkspaceEditFormProps) {
                 id="description"
                 name="description"
                 defaultValue={workspace.description || ""}
-                placeholder="Descripción del workspace (opcional)"
+                placeholder="Descripción del juego (opcional)"
                 rows={3}
                 disabled={isUpdating}
               />
@@ -189,10 +189,10 @@ export function WorkspaceEditForm({ workspace }: WorkspaceEditFormProps) {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <ImageIcon className="h-5 w-5" />
-            <span>Imagen del Workspace</span>
+            <span>Imagen del Juego</span>
           </CardTitle>
           <CardDescription>
-            Personaliza la imagen que representa a este workspace
+            Personaliza la imagen que representa a este juego
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -248,16 +248,16 @@ export function WorkspaceEditForm({ workspace }: WorkspaceEditFormProps) {
             <span>Zona de Peligro</span>
           </CardTitle>
           <CardDescription>
-            Acciones irreversibles para este workspace
+            Acciones irreversibles para este juego
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="p-4 border border-destructive/50 rounded-lg bg-destructive/5">
             <h4 className="font-medium text-destructive mb-2">
-              Eliminar Workspace
+              Eliminar Juego
             </h4>
             <p className="text-sm text-muted-foreground mb-4">
-              Esta acción eliminará permanentemente el workspace y todos sus datos. 
+              Esta acción eliminará permanentemente el juego y todos sus datos. 
               Esta acción no se puede deshacer.
             </p>
             <Button 
@@ -266,7 +266,7 @@ export function WorkspaceEditForm({ workspace }: WorkspaceEditFormProps) {
               onClick={handleDeleteWorkspace}
               disabled={isDeletingWorkspace}
             >
-              {isDeletingWorkspace ? 'Eliminando...' : 'Eliminar Workspace'}
+              {isDeletingWorkspace ? 'Eliminando...' : 'Eliminar Juego'}
             </Button>
           </div>
         </CardContent>

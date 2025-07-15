@@ -124,20 +124,19 @@ export async function recalculateUserPoints(
   workspaceSeasonId: string,
   userId: string
 ): Promise<SeasonStanding> {
-  // Obtener todas las predicciones con puntos
-  const predictions = await prisma.prediction.findMany({
+  // Obtener todos los puntos del usuario para este workspace
+  const predictionPoints = await prisma.predictionPoints.findMany({
     where: {
       workspaceSeasonId,
-      userId,
-      earnedPoints: {
-        not: null
+      prediction: {
+        userId
       }
     }
   })
   
   // Calcular totales
-  const totalPoints = predictions.reduce((sum, pred) => sum + (pred.earnedPoints || 0), 0)
-  const predictionsCount = predictions.length
+  const totalPoints = predictionPoints.reduce((sum, pp) => sum + pp.points, 0)
+  const predictionsCount = predictionPoints.length
   
   // Actualizar standing
   return await prisma.seasonStanding.upsert({
@@ -164,16 +163,20 @@ export async function recalculateUserPoints(
  * Recalcula los puntos de todos los usuarios de un workspace
  */
 export async function recalculateAllStandings(workspaceSeasonId: string): Promise<void> {
-  // Obtener todos los usuarios con predicciones
-  const users = await prisma.prediction.findMany({
+  // Obtener todos los usuarios con puntos en este workspace
+  const predictionPoints = await prisma.predictionPoints.findMany({
     where: { workspaceSeasonId },
-    select: { userId: true },
-    distinct: ['userId']
+    include: { 
+      prediction: {
+        select: { userId: true }
+      } 
+    }
   })
   
   // Recalcular para cada usuario
+  const uniqueUserIds = [...new Set(predictionPoints.map(pp => pp.prediction.userId))]
   await Promise.all(
-    users.map(user => recalculateUserPoints(workspaceSeasonId, user.userId))
+    uniqueUserIds.map(userId => recalculateUserPoints(workspaceSeasonId, userId))
   )
 }
 
@@ -198,7 +201,7 @@ export async function getWorkspaceStats(workspaceSeasonId: string) {
     prisma.seasonStanding.count({
       where: { workspaceSeasonId }
     }),
-    prisma.prediction.count({
+    prisma.predictionPoints.count({
       where: { workspaceSeasonId }
     }),
     prisma.seasonStanding.aggregate({

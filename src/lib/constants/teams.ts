@@ -1,14 +1,14 @@
 export const F1_TEAMS_2025 = [
-  { name: "Mercedes", fullName: "Mercedes-AMG Petronas F1 Team", color: "#00D2BE" },
   { name: "Red Bull", fullName: "Oracle Red Bull Racing", color: "#0600EF" },
-  { name: "Ferrari", fullName: "Scuderia Ferrari", color: "#DC0000" },
   { name: "McLaren", fullName: "McLaren F1 Team", color: "#FF8700" },
+  { name: "Ferrari", fullName: "Scuderia Ferrari", color: "#DC0000" },
+  { name: "Mercedes", fullName: "Mercedes-AMG Petronas F1 Team", color: "#00D2BE" },
   { name: "Aston Martin", fullName: "Aston Martin Aramco F1 Team", color: "#006F62" },
   { name: "Alpine", fullName: "BWT Alpine F1 Team", color: "#0090FF" },
+  { name: "RB", fullName: "Visa Cash App RB F1 Team", color: "#2B4562" },
+  { name: "Haas", fullName: "MoneyGram Haas F1 Team", color: "#B6BABD" },
   { name: "Williams", fullName: "Williams Racing", color: "#005AFF" },
-  { name: "AlphaTauri", fullName: "Scuderia AlphaTauri", color: "#2B4562" },
-  { name: "Alfa Romeo", fullName: "Alfa Romeo F1 Team", color: "#900000" },
-  { name: "Haas", fullName: "Haas F1 Team", color: "#FFFFFF" }
+  { name: "Sauber", fullName: "Stake F1 Team Kick Sauber", color: "#52E252" }
 ] as const
 
 export type F1Team = typeof F1_TEAMS_2025[number]

@@ -15,18 +15,18 @@ export default function NewWorkspacePage() {
           </Link>
         </Button>
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Nuevo Workspace</h2>
+          <h2 className="text-3xl font-bold tracking-tight">Nuevo Juego</h2>
           <p className="text-muted-foreground">
-            Crear un nuevo workspace en el sistema
+            Crear un nuevo juego en el sistema
           </p>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Información del Workspace</CardTitle>
+          <CardTitle>Información del Juego</CardTitle>
           <CardDescription>
-            Complete los datos para crear un nuevo workspace
+            Complete los datos para crear un nuevo juego
           </CardDescription>
         </CardHeader>
         <CardContent>

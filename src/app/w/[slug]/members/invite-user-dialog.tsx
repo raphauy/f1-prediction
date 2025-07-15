@@ -69,14 +69,14 @@ export function InviteUserDialog({ workspaceId, workspaceSlug }: InviteUserDialo
       <DialogTrigger asChild>
         <Button size="sm">
           <Plus className="h-4 w-4 mr-2" />
-          Invitar Usuario
+          Invitar
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Invitar Usuario al Workspace</DialogTitle>
+          <DialogTitle>Invitar a un competidor</DialogTitle>
           <DialogDescription>
-            Envía una invitación por email para que se una al workspace.
+            Envía una invitación por email para que se una al juego.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -97,7 +97,7 @@ export function InviteUserDialog({ workspaceId, workspaceSlug }: InviteUserDialo
           <div className="space-y-2">
             <Label htmlFor="role" className="flex items-center gap-2">
               <UserCheck className="h-4 w-4" />
-              Rol en el workspace
+              Rol en el juego
             </Label>
             <Select name="role" defaultValue={WorkspaceRole.member} disabled={isLoading}>
               <SelectTrigger>
@@ -105,7 +105,7 @@ export function InviteUserDialog({ workspaceId, workspaceSlug }: InviteUserDialo
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={WorkspaceRole.member}>
-                  Miembro
+                  Competidor
                 </SelectItem>
                 <SelectItem value={WorkspaceRole.admin}>
                   Administrador
@@ -113,8 +113,8 @@ export function InviteUserDialog({ workspaceId, workspaceSlug }: InviteUserDialo
               </SelectContent>
             </Select>
             <div className="text-xs text-muted-foreground space-y-1">
-              <div><strong>Miembro:</strong> Puede ver y participar en el workspace</div>
-              <div><strong>Administrador:</strong> Puede gestionar usuarios, configuración e invitaciones</div>
+              <div><strong>Competidor:</strong> Puede ver y participar en el juego</div>
+              <div><strong>Administrador:</strong> Puede gestionar competidores, configuración e invitaciones</div>
             </div>
           </div>
           <DialogFooter className="gap-2">
