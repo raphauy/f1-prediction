@@ -1,8 +1,7 @@
 import { auth } from "@/lib/auth"
-import { getWorkspaceBySlug, isUserInWorkspace, isUserWorkspaceAdmin } from "@/services/workspace-service"
+import { getWorkspaceBySlug, isUserInWorkspace, isUserWorkspaceAdmin, getUserWorkspaces } from "@/services/workspace-service"
 import { redirect, notFound } from "next/navigation"
 import { WorkspaceNav } from "./workspace-nav"
-import { WorkspaceAvatar } from "@/components/workspace-avatar"
 
 interface WorkspaceLayoutProps {
   children: React.ReactNode
@@ -36,33 +35,20 @@ export default async function WorkspaceLayout({
 
   // Determinar si el usuario es admin del workspace para mostrar opciones de navegación
   const isAdmin = await isUserWorkspaceAdmin(session.user.id, workspace.id)
+  
+  // Obtener workspaces del usuario para el selector
+  const userWorkspaces = await getUserWorkspaces(session.user.id)
 
   return (
     <div className="space-y-6">
-      {/* Workspace Header */}
-      <div className="bg-card border rounded-lg p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start space-x-4">
-            <WorkspaceAvatar workspace={workspace} size="lg" />
-            <div>
-              <h1 className="text-2xl font-bold">
-                {workspace.name}
-              </h1>
-              {workspace.description && (
-                <p className="text-muted-foreground mt-1">
-                  {workspace.description}
-                </p>
-              )}
-              <p className="text-sm text-muted-foreground mt-2">
-                /{workspace.slug}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Navigation */}
-      <WorkspaceNav workspaceSlug={slug} isAdmin={isAdmin} />
+      <WorkspaceNav 
+        workspaceSlug={slug} 
+        isAdmin={isAdmin} 
+        user={session.user}
+        userWorkspaces={userWorkspaces}
+        currentWorkspace={workspace}
+      />
 
       {/* Content */}
       {children}

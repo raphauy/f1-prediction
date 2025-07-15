@@ -9,12 +9,16 @@ import {
   deleteWorkspace,
   getWorkspaceBySlug,
   updateWorkspaceImage,
+  addUserToWorkspace,
   type CreateWorkspaceData 
 } from "@/services/workspace-service"
+import { WorkspaceRole } from "@prisma/client"
 import {
   replaceWorkspaceImage,
   deleteImage,
 } from '@/services/upload-service'
+import { getActiveSeason } from "@/services/season-service"
+import { prisma } from "@/lib/prisma"
 
 export async function createWorkspaceAction(formData: FormData) {
   try {
@@ -41,7 +45,26 @@ export async function createWorkspaceAction(formData: FormData) {
       description: description || undefined
     }
 
-    await createWorkspace(workspaceData)
+    const newWorkspace = await createWorkspace(workspaceData)
+
+    // Agregar al creador como admin del workspace
+    await addUserToWorkspace(
+      session.user.id,
+      newWorkspace.id,
+      WorkspaceRole.admin
+    )
+
+    // Asignar la temporada activa al nuevo workspace
+    const activeSeason = await getActiveSeason()
+    if (activeSeason) {
+      await prisma.workspaceSeason.create({
+        data: {
+          workspaceId: newWorkspace.id,
+          seasonId: activeSeason.id,
+          isActive: true
+        }
+      })
+    }
 
     revalidatePath("/admin/workspaces")
     return { success: true, message: "Workspace creado correctamente" }

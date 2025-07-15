@@ -18,6 +18,12 @@ export type UpdateSeasonData = z.infer<typeof updateSeasonSchema>
 
 // Funciones de servicio
 
+export async function getActiveSeason() {
+  return await prisma.season.findFirst({
+    where: { isActive: true },
+  })
+}
+
 export async function getAllSeasons() {
   return await prisma.season.findMany({
     orderBy: { year: 'desc' },

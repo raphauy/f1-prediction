@@ -90,9 +90,11 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="text-center">
-        <CardTitle>F1 Predictions Game</CardTitle>
+    <Card className="w-full border-gray-200">
+      <CardHeader className="text-center border-b border-gray-100 py-6">
+        <CardTitle className="text-2xl font-bold">
+          F1 Predictions Game <span className="text-red-500">🏁</span>
+        </CardTitle>
         <CardDescription>
           {step === "email" 
             ? searchParams.get("email") 
@@ -102,7 +104,7 @@ export function LoginForm() {
           }
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 p-6">
         {step === "email" ? (
           <form onSubmit={handleEmailSubmit} className="space-y-4">
             <div>
@@ -115,7 +117,7 @@ export function LoginForm() {
                 disabled={isPending}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isPending}>
+            <Button type="submit" className="w-full bg-red-500 hover:bg-red-600 text-white" disabled={isPending}>
               {isPending ? "Enviando..." : "Enviar Código"}
             </Button>
           </form>
@@ -130,10 +132,10 @@ export function LoginForm() {
                 maxLength={6}
                 required
                 disabled={isPending}
-                className="text-center text-lg tracking-widest"
+                className="text-center text-lg tracking-widest font-mono"
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isPending || otp.length !== 6}>
+            <Button type="submit" className="w-full bg-red-500 hover:bg-red-600 text-white" disabled={isPending || otp.length !== 6}>
               {isPending ? "Verificando..." : "Verificar Código"}
             </Button>
             <Button 

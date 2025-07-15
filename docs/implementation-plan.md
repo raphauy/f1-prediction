@@ -36,7 +36,9 @@
 - [x] Implement QuestionTemplate system for "Clásica" and "Strollómetro" categories with copy-to-GP functionality
 - [x] Add Drag and Drop to GP questions table
 - [x] Add validation for race dates and qualifying times
-- [ ] Build workspace season enrollment system
+- [x] Build workspace season enrollment system
+- [x] design email for invitation with look and feel similar to the dashboard
+
 
 **Acceptance Criteria:**
 - Global admins can create seasons that appear in all workspaces

@@ -53,7 +53,7 @@ export function InviteValid({ invitation, userState, session }: InviteValidProps
 
   const getRoleBadge = (role: string) => {
     return role === "admin" ? (
-      <Badge variant="default" className="bg-blue-100 text-blue-800">
+      <Badge variant="default" className="bg-red-100 text-red-800">
         <Shield className="w-3 h-3 mr-1" />
         Administrador
       </Badge>
@@ -123,14 +123,14 @@ export function InviteValid({ invitation, userState, session }: InviteValidProps
   return (
     <Card className="w-full max-w-md">
       <CardHeader className="text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
-          <Users className="h-6 w-6 text-blue-600" />
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+          <Users className="h-6 w-6 text-red-600" />
         </div>
         <CardTitle className="text-xl font-semibold text-gray-900">
-          Invitación al workspace
+          Invitación a F1 Predictions 🏁
         </CardTitle>
         <CardDescription>
-          Has sido invitado a unirte a &ldquo;{invitation.workspace.name}&rdquo;
+          Has sido invitado a competir en &ldquo;{invitation.workspace.name}&rdquo;
         </CardDescription>
       </CardHeader>
       
@@ -138,7 +138,7 @@ export function InviteValid({ invitation, userState, session }: InviteValidProps
         {/* Información del workspace */}
         <div className="bg-gray-50 rounded-lg p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">Workspace:</span>
+            <span className="text-sm font-medium text-gray-700">Competencia:</span>
             <span className="text-sm font-semibold">{invitation.workspace.name}</span>
           </div>
           
@@ -161,7 +161,7 @@ export function InviteValid({ invitation, userState, session }: InviteValidProps
         {invitation.workspace.description && (
           <div>
             <p className="text-sm text-gray-600">
-              <strong>Acerca del workspace:</strong> {invitation.workspace.description}
+              <strong>Acerca de la competencia:</strong> {invitation.workspace.description}
             </p>
           </div>
         )}
@@ -173,7 +173,7 @@ export function InviteValid({ invitation, userState, session }: InviteValidProps
             <Button 
               onClick={handleAccept} 
               disabled={isLoading}
-              className="w-full"
+              className="w-full bg-red-500 hover:bg-red-600 text-white"
             >
               {isLoading ? (
                 <>
@@ -193,7 +193,7 @@ export function InviteValid({ invitation, userState, session }: InviteValidProps
               <p className="text-sm text-gray-600 text-center">
                 Ya tienes una cuenta. Inicia sesión para aceptar la invitación.
               </p>
-              <Button onClick={handleLogin} className="w-full">
+              <Button onClick={handleLogin} className="w-full bg-red-500 hover:bg-red-600 text-white">
                 <LogIn className="h-4 w-4 mr-2" />
                 Iniciar sesión
               </Button>
@@ -204,7 +204,7 @@ export function InviteValid({ invitation, userState, session }: InviteValidProps
               <p className="text-sm text-gray-600 text-center">
                 Para aceptar la invitación, necesitas crear una cuenta.
               </p>
-              <Button onClick={handleSignUp} className="w-full">
+              <Button onClick={handleSignUp} className="w-full bg-red-500 hover:bg-red-600 text-white">
                 <UserPlus className="h-4 w-4 mr-2" />
                 Crear cuenta
               </Button>
@@ -219,7 +219,7 @@ export function InviteValid({ invitation, userState, session }: InviteValidProps
         {/* Información adicional */}
         <div className="text-center">
           <p className="text-xs text-gray-500">
-            Al aceptar esta invitación, te unirás al workspace y podrás colaborar con el equipo.
+            Al aceptar esta invitación, te unirás al juego de predicciones F1 y podrás competir con otros fans.
           </p>
         </div>
       </CardContent>

@@ -30,7 +30,7 @@ export default function WorkspaceInvitationEmail({
     <Html>
       <Head />
       <Preview>
-        {inviterName} te ha invitado a unirte al workspace &ldquo;{workspaceName}&rdquo; en F1 Predictions Game
+        {inviterName} te ha invitado a competir en &ldquo;{workspaceName}&rdquo; - F1 Predictions Game
       </Preview>
       <Tailwind>
         <Body className="bg-gray-100 font-sans">
@@ -38,9 +38,9 @@ export default function WorkspaceInvitationEmail({
             <Section className="bg-white border border-gray-300 rounded-lg overflow-hidden shadow-sm">
               {/* Header with gradient */}
               <Section 
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white text-center py-4" 
+                className="bg-gradient-to-r from-red-500 to-red-600 text-white text-center py-4" 
                 style={{
-                  background: 'linear-gradient(to right, #2563eb, #9333ea)', 
+                  background: 'linear-gradient(to right, #ef4444, #dc2626)', 
                   color: '#ffffff', 
                   textAlign: 'center', 
                   padding: '16px 0'
@@ -57,7 +57,7 @@ export default function WorkspaceInvitationEmail({
                     className="text-white mt-1 mb-0 text-sm opacity-90" 
                     style={{color: '#ffffff', fontSize: '14px', margin: '4px 0 0 0'}}
                   >
-                    Invitación a Workspace
+                    Invitación a Competir
                   </Text>
                 </Container>
               </Section>
@@ -65,25 +65,25 @@ export default function WorkspaceInvitationEmail({
               {/* Main content */}
               <Section className="px-4 pt-4 pb-3">
                 <Heading className="text-gray-900 text-xl font-semibold mb-3 mt-0">
-                  ¡Has sido invitado! 🎉
+                  ¡Únete a la competencia! 🏁
                 </Heading>
                 
                 <Text className="text-gray-600 mb-4 leading-6 text-base">
-                  <strong>{inviterName}</strong> te ha invitado a unirte al workspace{" "}
-                  <strong>&ldquo;{workspaceName}&rdquo;</strong> en F1 Predictions Game.
+                  <strong>{inviterName}</strong> te ha invitado a unirte a la competencia de predicciones F1 en{" "}
+                  <strong>&ldquo;{workspaceName}&rdquo;</strong>.
                 </Text>
 
                 <Text className="text-gray-600 mb-4 leading-6 text-sm">
-                  Al aceptar esta invitación podrás colaborar con el equipo, acceder a los recursos del workspace y participar en los proyectos compartidos.
+                  Compite con otros fans de F1, realiza tus predicciones para cada Gran Premio, gana puntos por tus aciertos y sube en la clasificación. ¡Demuestra que eres el mejor predictor de la temporada!
                 </Text>
 
                 {/* Call to action button */}
                 <Section className="text-center mb-6">
                   <Button
                     href={acceptUrl}
-                    className="bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg text-base inline-block no-underline"
+                    className="bg-red-500 text-white font-semibold py-3 px-6 rounded-lg text-base inline-block no-underline"
                     style={{
-                      backgroundColor: '#2563eb',
+                      backgroundColor: '#ef4444',
                       color: '#ffffff',
                       fontWeight: '600',
                       padding: '12px 24px',
@@ -92,7 +92,7 @@ export default function WorkspaceInvitationEmail({
                       display: 'inline-block'
                     }}
                   >
-                    Aceptar Invitación
+                    Unirse a la Competencia
                   </Button>
                 </Section>
 
@@ -101,7 +101,7 @@ export default function WorkspaceInvitationEmail({
                 </Text>
 
                 <Section className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
-                  <Text className="text-blue-600 text-xs m-0 word-break-all font-mono">
+                  <Text className="text-red-500 text-xs m-0 word-break-all font-mono">
                     {acceptUrl}
                   </Text>
                 </Section>

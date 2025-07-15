@@ -24,7 +24,7 @@ export default function OtpEmail({ otp = "123456" }: OtpEmailProps) {
           <Container className="mx-auto py-4 px-4 w-[580px] max-w-full">
             <Section className="bg-white border border-gray-300 rounded-lg overflow-hidden shadow-sm">
               {/* Header with gradient */}
-              <Section className="bg-gradient-to-r from-blue-600 to-purple-600 text-white text-center py-4" style={{background: 'linear-gradient(to right, #2563eb, #9333ea)', color: '#ffffff', textAlign: 'center', padding: '16px 0'}}>
+              <Section className="bg-gradient-to-r from-red-500 to-red-600 text-white text-center py-4" style={{background: 'linear-gradient(to right, #ef4444, #dc2626)', color: '#ffffff', textAlign: 'center', padding: '16px 0'}}>
                 <Container className="px-4">
                   <Heading className="text-lg font-bold m-0 text-white" style={{color: '#ffffff', margin: 0}}>F1 Predictions Game</Heading>
                   <Text className="text-white mt-1 mb-0 text-sm opacity-90" style={{color: '#ffffff', fontSize: '14px', margin: '4px 0 0 0'}}>Verificación de Acceso Seguro</Text>
@@ -34,7 +34,7 @@ export default function OtpEmail({ otp = "123456" }: OtpEmailProps) {
               {/* Main content */}
               <Section className="px-4 pt-2 pb-3">
                 <Heading className="text-gray-900 text-lg font-semibold mb-2 mt-0">
-                  Tu código de verificación
+                  🔐 Tu código de verificación
                 </Heading>
                 
                 <Text className="text-gray-600 mb-4 leading-5 text-sm">
@@ -55,8 +55,8 @@ export default function OtpEmail({ otp = "123456" }: OtpEmailProps) {
                 </Text>
 
                 {/* Security notice */}
-                <Section className="bg-blue-50 border border-blue-200 rounded-lg p-2">
-                  <Text className="text-blue-800 text-xs m-0 font-medium">
+                <Section className="bg-red-50 border border-red-200 rounded-lg p-2">
+                  <Text className="text-red-800 text-xs m-0 font-medium">
                     🔒 Tip de seguridad: Nunca te pediremos tu código de verificación por teléfono, email u otro método.
                   </Text>
                 </Section>
