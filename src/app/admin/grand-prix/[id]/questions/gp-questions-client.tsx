@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -96,12 +96,18 @@ interface GPQuestionsClientProps {
 
 export function GPQuestionsClient({
   grandPrixId,
-  gpQuestions,
+  gpQuestions: initialGpQuestions,
   templates,
   focusPilot,
   focusPilotContext,
 }: GPQuestionsClientProps) {
   const router = useRouter()
+  const [gpQuestions, setGpQuestions] = useState(initialGpQuestions)
+  
+  // Sincronizar cuando las props cambien (después de router.refresh())
+  useEffect(() => {
+    setGpQuestions(initialGpQuestions)
+  }, [initialGpQuestions])
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [selectedTemplateId, setSelectedTemplateId] = useState('')
   const [customPoints, setCustomPoints] = useState('')
@@ -134,10 +140,15 @@ export function GPQuestionsClient({
   const [customQuestionCategory, setCustomQuestionCategory] = useState<QuestionCategory>('CLASSIC' as QuestionCategory)
   const [customQuestionBadge, setCustomQuestionBadge] = useState<string>('none')
 
-  // Ordenar las preguntas por orden
+  // Ordenar las preguntas por orden - usar el estado local gpQuestions
   const [sortedQuestions, setSortedQuestions] = useState(() => 
     [...gpQuestions].sort((a, b) => a.order - b.order)
   )
+  
+  // Actualizar sortedQuestions cuando gpQuestions cambie
+  useEffect(() => {
+    setSortedQuestions([...gpQuestions].sort((a, b) => a.order - b.order))
+  }, [gpQuestions])
   
   // Configuración de sensores para drag and drop
   const sensors = useSensors(
@@ -346,14 +357,30 @@ export function GPQuestionsClient({
       const result = await removeQuestionFromGPAction(grandPrixId, deleteDialog.questionId)
       
       if (result.success) {
+        // Actualizar el estado local optimísticamente
+        const isInline = deleteDialog.questionId.startsWith('inline-')
+        if (isInline) {
+          const gpQuestionId = deleteDialog.questionId.replace('inline-', '')
+          setGpQuestions(prevQuestions => 
+            prevQuestions.filter(q => q.id !== gpQuestionId)
+          )
+        } else {
+          setGpQuestions(prevQuestions => 
+            prevQuestions.filter(q => q.questionId !== deleteDialog.questionId)
+          )
+        }
+        
         toast.success('Pregunta eliminada correctamente')
+        setDeleteDialog({ isOpen: false, questionId: '', questionText: '' })
+        
+        // También hacer refresh para sincronizar con el servidor
         router.refresh()
       } else {
         toast.error(result.error || 'Error al eliminar la pregunta')
+        setDeleteDialog({ isOpen: false, questionId: '', questionText: '' })
       }
     } catch {
       toast.error('Error al eliminar la pregunta')
-    } finally {
       setDeleteDialog({ isOpen: false, questionId: '', questionText: '' })
     }
   }

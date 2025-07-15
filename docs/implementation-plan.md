@@ -35,7 +35,7 @@
 - [x] Implement the new requirement (category questions). Ask the user to plan that.
 - [x] Implement QuestionTemplate system for "Clásica" and "Strollómetro" categories with copy-to-GP functionality
 - [x] Add Drag and Drop to GP questions table
-- [ ] Add validation for race dates and qualifying times
+- [x] Add validation for race dates and qualifying times
 - [ ] Build workspace season enrollment system
 
 **Acceptance Criteria:**

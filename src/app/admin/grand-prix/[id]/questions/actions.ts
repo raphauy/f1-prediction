@@ -32,7 +32,8 @@ export async function addQuestionToGPAction(data: CreateGPQuestionData) {
 export async function removeQuestionFromGPAction(grandPrixId: string, questionId: string) {
   try {
     await removeQuestionFromGP(grandPrixId, questionId)
-    revalidatePath(`/admin/grand-prix/${grandPrixId}/questions`)
+    // Revalidar la ruta específica - usar revalidatePath con type='page' para forzar actualización completa
+    revalidatePath(`/admin/grand-prix/${grandPrixId}/questions`, 'page')
     return { success: true }
   } catch (error) {
     return {

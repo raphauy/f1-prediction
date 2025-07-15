@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useFormStatus } from 'react-dom'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Loader2 } from 'lucide-react'
+import { Loader2, AlertCircle } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/select'
 import { createGrandPrixAction, updateGrandPrixAction } from './actions'
 import { formatInTimeZone } from 'date-fns-tz'
+import { differenceInDays, parseISO } from 'date-fns'
 import type { GrandPrixWithDetails } from '@/services/grand-prix-service'
 
 // Lista de zonas horarias más comunes para F1
@@ -61,6 +62,12 @@ function SubmitButton({ isEdit }: { isEdit: boolean }) {
 export function GrandPrixForm({ grandPrix, seasons }: GrandPrixFormProps) {
   const [selectedTimezone, setSelectedTimezone] = useState(grandPrix?.timezone || 'Europe/Monaco')
   const [error, setError] = useState<string | null>(null)
+  const [validationWarnings, setValidationWarnings] = useState<string[]>([])
+  const [qualifyingDate, setQualifyingDate] = useState('')
+  const [qualifyingTime, setQualifyingTime] = useState('')
+  const [raceDate, setRaceDate] = useState('')
+  const [raceTime, setRaceTime] = useState('')
+  const [isSprint, setIsSprint] = useState(grandPrix?.isSprint || false)
 
   // Si estamos editando, convertir las fechas UTC a la zona horaria local
   const getLocalDateString = (utcDate: Date | string, timezone: string) => {
@@ -72,6 +79,77 @@ export function GrandPrixForm({ grandPrix, seasons }: GrandPrixFormProps) {
     const date = new Date(utcDate)
     return formatInTimeZone(date, timezone, 'HH:mm')
   }
+
+  // Inicializar valores para edición
+  useEffect(() => {
+    if (grandPrix) {
+      setQualifyingDate(getLocalDateString(grandPrix.qualifyingDate, selectedTimezone))
+      setQualifyingTime(getLocalTimeString(grandPrix.qualifyingDate, selectedTimezone))
+      setRaceDate(getLocalDateString(grandPrix.raceDate, selectedTimezone))
+      setRaceTime(getLocalTimeString(grandPrix.raceDate, selectedTimezone))
+    }
+  }, [grandPrix, selectedTimezone])
+
+  // Validación en tiempo real
+  useEffect(() => {
+    const warnings: string[] = []
+    
+    if (qualifyingDate && raceDate) {
+      const qDate = parseISO(qualifyingDate)
+      const rDate = parseISO(raceDate)
+      
+      // Validar orden de fechas
+      if (qDate >= rDate) {
+        warnings.push('La clasificación debe ser antes que la carrera')
+      } else {
+        // Validar diferencia de días
+        const daysDiff = differenceInDays(rDate, qDate)
+        
+        if (isSprint) {
+          if (daysDiff < 2 || daysDiff > 3) {
+            warnings.push('Para Sprint: debe haber 2-3 días entre clasificación y carrera')
+          }
+        } else {
+          if (daysDiff < 1 || daysDiff > 2) {
+            warnings.push('Para carrera normal: debe haber 1-2 días entre clasificación y carrera')
+          }
+        }
+      }
+      
+      // Validar fechas futuras (solo para creación)
+      if (!grandPrix) {
+        const now = new Date()
+        if (qDate <= now) {
+          warnings.push('La fecha de clasificación debe ser futura')
+        }
+      }
+    }
+    
+    // Validar horarios típicos
+    if (qualifyingTime) {
+      const hour = parseInt(qualifyingTime.split(':')[0])
+      if (hour < 13 || hour > 18) {
+        warnings.push('Horario de clasificación atípico (normalmente 13:00-18:00)')
+      }
+    }
+    
+    if (raceTime) {
+      const hour = parseInt(raceTime.split(':')[0])
+      const isLasVegas = selectedTimezone === 'America/Los_Angeles'
+      
+      if (isLasVegas) {
+        if (hour >= 6 && hour <= 19) {
+          warnings.push('Las Vegas tiene carreras nocturnas (20:00-02:00)')
+        }
+      } else {
+        if (hour < 12 || hour > 16) {
+          warnings.push('Horario de carrera atípico (normalmente 12:00-16:00)')
+        }
+      }
+    }
+    
+    setValidationWarnings(warnings)
+  }, [qualifyingDate, qualifyingTime, raceDate, raceTime, isSprint, grandPrix, selectedTimezone])
 
   const action = async (formData: FormData) => {
     formData.set('timezone', selectedTimezone)
@@ -90,6 +168,20 @@ export function GrandPrixForm({ grandPrix, seasons }: GrandPrixFormProps) {
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded">
           {error}
+        </div>
+      )}
+
+      {validationWarnings.length > 0 && (
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 px-4 py-3 rounded space-y-2">
+          <div className="flex items-center gap-2 text-yellow-800 dark:text-yellow-300">
+            <AlertCircle className="h-4 w-4" />
+            <span className="font-medium">Advertencias de validación:</span>
+          </div>
+          <ul className="list-disc list-inside text-sm text-yellow-700 dark:text-yellow-400 space-y-1">
+            {validationWarnings.map((warning, index) => (
+              <li key={index}>{warning}</li>
+            ))}
+          </ul>
         </div>
       )}
 
@@ -202,11 +294,9 @@ export function GrandPrixForm({ grandPrix, seasons }: GrandPrixFormProps) {
                 id="qualifyingDate"
                 name="qualifyingDate"
                 type="date"
-                defaultValue={
-                  grandPrix 
-                    ? getLocalDateString(grandPrix.qualifyingDate, selectedTimezone)
-                    : undefined
-                }
+                value={qualifyingDate}
+                onChange={(e) => setQualifyingDate(e.target.value)}
+                min={!grandPrix ? new Date().toISOString().split('T')[0] : undefined}
                 required
               />
             </div>
@@ -216,11 +306,8 @@ export function GrandPrixForm({ grandPrix, seasons }: GrandPrixFormProps) {
                 id="qualifyingTime"
                 name="qualifyingTime"
                 type="time"
-                defaultValue={
-                  grandPrix 
-                    ? getLocalTimeString(grandPrix.qualifyingDate, selectedTimezone)
-                    : undefined
-                }
+                value={qualifyingTime}
+                onChange={(e) => setQualifyingTime(e.target.value)}
                 required
               />
             </div>
@@ -236,11 +323,9 @@ export function GrandPrixForm({ grandPrix, seasons }: GrandPrixFormProps) {
                 id="raceDate"
                 name="raceDate"
                 type="date"
-                defaultValue={
-                  grandPrix 
-                    ? getLocalDateString(grandPrix.raceDate, selectedTimezone)
-                    : undefined
-                }
+                value={raceDate}
+                onChange={(e) => setRaceDate(e.target.value)}
+                min={!grandPrix ? new Date().toISOString().split('T')[0] : undefined}
                 required
               />
             </div>
@@ -250,11 +335,8 @@ export function GrandPrixForm({ grandPrix, seasons }: GrandPrixFormProps) {
                 id="raceTime"
                 name="raceTime"
                 type="time"
-                defaultValue={
-                  grandPrix 
-                    ? getLocalTimeString(grandPrix.raceDate, selectedTimezone)
-                    : undefined
-                }
+                value={raceTime}
+                onChange={(e) => setRaceTime(e.target.value)}
                 required
               />
             </div>
@@ -267,7 +349,8 @@ export function GrandPrixForm({ grandPrix, seasons }: GrandPrixFormProps) {
           id="isSprint" 
           name="isSprint" 
           value="true"
-          defaultChecked={grandPrix?.isSprint}
+          checked={isSprint}
+          onCheckedChange={(checked) => setIsSprint(checked as boolean)}
         />
         <Label 
           htmlFor="isSprint" 
