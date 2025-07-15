@@ -5,7 +5,6 @@ import { verifyOtpToken } from "@/services/auth-service"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
-  trustHost: true,
   providers: [
     Credentials({
       id: "credentials",
