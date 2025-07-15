@@ -95,21 +95,23 @@ export function PredictionTableClient({
     <div className="space-y-6">
       {/* Header */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
-              {grandPrix.name}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="space-y-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <h1 className="text-2xl sm:text-3xl font-bold">
+                {grandPrix.name}
+              </h1>
               {grandPrix.isSprint && (
-                <Badge variant="secondary" className="bg-yellow-500 text-black">
+                <Badge variant="secondary" className="bg-yellow-500 text-black w-fit">
                   Sprint
                 </Badge>
               )}
-            </h1>
-            <p className="text-muted-foreground mt-1">
+            </div>
+            <p className="text-sm sm:text-base text-muted-foreground">
               {grandPrix.circuit}, {grandPrix.country} • Ronda {grandPrix.round}
             </p>
           </div>
-          <Button asChild variant="outline">
+          <Button asChild variant="outline" size="sm" className="w-fit">
             <Link href={`/w/${workspaceSlug}`}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver

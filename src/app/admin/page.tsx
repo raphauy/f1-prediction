@@ -111,7 +111,7 @@ export default async function AdminDashboard() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-muted-foreground">ID de Usuario:</span>
-                <span className="text-sm font-mono text-xs">{session?.user?.id}</span>
+                <span className="text-sm font-mono">{session?.user?.id}</span>
               </div>
             </div>
           </CardContent>

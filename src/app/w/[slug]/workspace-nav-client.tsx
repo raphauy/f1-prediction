@@ -1,7 +1,9 @@
 "use client"
 
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { BarChart3, Settings, Users, Target, Trophy, Calendar } from "lucide-react"
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { BarChart3, Settings, Users, Target, Trophy, Calendar, Menu } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { UserMenu } from "./user-menu"
@@ -33,6 +35,7 @@ export function WorkspaceNavClient({
   currentWorkspace 
 }: WorkspaceNavClientProps) {
   const pathname = usePathname()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const navItems = [
     {
@@ -86,62 +89,151 @@ export function WorkspaceNavClient({
   ].filter(item => isAdmin || item.showForMembers)
 
   return (
-    <nav className="bg-card border rounded-lg p-4">
-      <div className="flex items-center justify-between">
-        {/* Navigation Items */}
-        <div className="flex items-center space-x-1">
-          {/* Workspace Selector - Solo si hay múltiples workspaces */}
-          {userWorkspaces && userWorkspaces.length > 1 && (
-            <>
-              <div className="flex items-center mr-2">
-                <WorkspaceSelector
-                  userWorkspaces={userWorkspaces}
-                  currentWorkspace={currentWorkspace}
-                  compact
-                />
-              </div>
-              <div className="h-4 w-px bg-border mx-2" />
-            </>
-          )}
-          
-          {navItems.map((item) => {
-            const Icon = item.icon
+    <nav className="bg-card border rounded-lg">
+      {/* Mobile Navigation */}
+      <div className="lg:hidden">
+        <div className="flex items-center justify-between p-4">
+          <div className="flex items-center space-x-2">
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="sm" className="p-0 h-9 w-9">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Abrir menú</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[280px] sm:w-[350px]">
+                <SheetHeader>
+                  <SheetTitle>Menú de navegación</SheetTitle>
+                </SheetHeader>
+                <div className="flex flex-col h-full">
+                  <div className="space-y-4 py-4">
+                    {/* Workspace Selector en mobile */}
+                    {userWorkspaces && userWorkspaces.length > 1 && (
+                      <div className="px-3 pb-2 border-b">
+                        <WorkspaceSelector
+                          userWorkspaces={userWorkspaces}
+                          currentWorkspace={currentWorkspace}
+                          compact={false}
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Nav Items */}
+                    <div className="px-3 space-y-1">
+                      {navItems.map((item) => {
+                        const Icon = item.icon
+                        
+                        if (item.disabled) {
+                          return (
+                            <Button
+                              key={item.href}
+                              variant="ghost"
+                              className="w-full justify-start opacity-50 cursor-not-allowed"
+                              disabled
+                            >
+                              <Icon className="h-4 w-4 mr-2" />
+                              <span>{item.label}</span>
+                            </Button>
+                          )
+                        }
+                        
+                        return (
+                          <Button
+                            key={item.href}
+                            variant={item.isActive ? "secondary" : "ghost"}
+                            className="w-full justify-start"
+                            asChild
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            <Link href={item.href}>
+                              <Icon className="h-4 w-4 mr-2" />
+                              <span>{item.label}</span>
+                            </Link>
+                          </Button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
             
-            if (item.disabled) {
+            {/* Workspace name or selector */}
+            {currentWorkspace && (
+              <div className="flex items-center">
+                <span className="font-medium text-sm truncate max-w-[150px]">
+                  {currentWorkspace.name}
+                </span>
+              </div>
+            )}
+          </div>
+          
+          {/* Right side actions */}
+          <div className="flex items-center space-x-2">
+            <ThemeToggle />
+            <UserMenu user={user} />
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Navigation */}
+      <div className="hidden lg:block p-4">
+        <div className="flex items-center justify-between">
+          {/* Navigation Items */}
+          <div className="flex items-center space-x-1">
+            {/* Workspace Selector - Solo si hay múltiples workspaces */}
+            {userWorkspaces && userWorkspaces.length > 1 && (
+              <>
+                <div className="flex items-center mr-2">
+                  <WorkspaceSelector
+                    userWorkspaces={userWorkspaces}
+                    currentWorkspace={currentWorkspace}
+                    compact
+                  />
+                </div>
+                <div className="h-4 w-px bg-border mx-2" />
+              </>
+            )}
+            
+            {navItems.map((item) => {
+              const Icon = item.icon
+              
+              if (item.disabled) {
+                return (
+                  <Button
+                    key={item.href}
+                    variant="ghost"
+                    size="sm"
+                    disabled
+                    className="opacity-50 cursor-not-allowed"
+                  >
+                    <Icon className="h-4 w-4 mr-2" />
+                    <span>{item.label}</span>
+                  </Button>
+                )
+              }
+              
               return (
                 <Button
                   key={item.href}
-                  variant="ghost"
+                  variant={item.isActive ? "default" : "ghost"}
                   size="sm"
-                  disabled
-                  className="opacity-50 cursor-not-allowed"
+                  asChild
                 >
-                  <Icon className="h-4 w-4 mr-2" />
-                  <span>{item.label}</span>
+                  <Link href={item.href} className="flex items-center space-x-2">
+                    <Icon className="h-4 w-4" />
+                    <span>{item.label}</span>
+                  </Link>
                 </Button>
               )
-            }
-            
-            return (
-              <Button
-                key={item.href}
-                variant={item.isActive ? "default" : "ghost"}
-                size="sm"
-                asChild
-              >
-                <Link href={item.href} className="flex items-center space-x-2">
-                  <Icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </Link>
-              </Button>
-            )
-          })}
-        </div>
+            })}
+          </div>
 
-        {/* User Actions */}
-        <div className="flex items-center space-x-2">
-          <ThemeToggle />
-          <UserMenu user={user} />
+          {/* User Actions */}
+          <div className="flex items-center space-x-2">
+            <ThemeToggle />
+            <UserMenu user={user} />
+          </div>
         </div>
       </div>
     </nav>
