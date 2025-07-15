@@ -25,8 +25,10 @@ import {
   Settings,
   ExternalLink,
   Trophy,
+  Flag,
+  HelpCircle,
 } from "lucide-react"
-import Image from "next/image"
+// import Image from "next/image"
 
 const adminNavItems = [
   {
@@ -53,6 +55,18 @@ const adminNavItems = [
     badge: "seasons"
   },
   {
+    title: "Grand Prix",
+    href: "/admin/grand-prix",
+    icon: Flag,
+    badge: "grandprix"
+  },
+  {
+    title: "Preguntas",
+    href: "/admin/questions",
+    icon: HelpCircle,
+    badge: "questions"
+  },
+  {
     title: "Configuración",
     href: "/admin/settings",
     icon: Settings
@@ -64,9 +78,11 @@ interface AdminSidebarClientProps {
   userCount: number
   workspaceCount: number
   seasonCount: number
+  grandPrixCount: number
+  questionCount: number
 }
 
-export function AdminSidebarClient({ children, userCount, workspaceCount, seasonCount }: AdminSidebarClientProps) {
+export function AdminSidebarClient({ children, userCount, workspaceCount, seasonCount, grandPrixCount, questionCount }: AdminSidebarClientProps) {
   const pathname = usePathname()
 
   const getBadgeCount = (badgeType: string) => {
@@ -77,6 +93,10 @@ export function AdminSidebarClient({ children, userCount, workspaceCount, season
         return workspaceCount
       case "seasons":
         return seasonCount
+      case "grandprix":
+        return grandPrixCount
+      case "questions":
+        return questionCount
       default:
         return 0
     }
@@ -88,7 +108,7 @@ export function AdminSidebarClient({ children, userCount, workspaceCount, season
         {/* Header with trigger and title like Claude */}
         <SidebarHeader className="flex flex-row items-center justify-between border-b p-2">
           <h2 className="text-lg flex flex-row items-center gap-2 pl-1 font-semibold truncate group-data-[collapsible=icon]:hidden">
-            <Image src="/logo.png" alt="Admin" width={32} height={32} />
+            {/* <Image src="/logo.png" alt="Admin" width={32} height={32} /> */}
             Admin
           </h2>
           <SidebarTrigger className="h-8 w-8 shrink-0" />

@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { Prisma } from '@prisma/client'
+import { GrandPrix, Prisma, QuestionType } from '@prisma/client'
+import { formatInTimeZone, fromZonedTime, toZonedTime } from 'date-fns-tz'
 
 // Schemas de validación
 export const createGrandPrixSchema = z.object({
@@ -14,6 +15,8 @@ export const createGrandPrixSchema = z.object({
   qualifyingDate: z.date(),
   isSprint: z.boolean().default(false),
   timezone: z.string().min(1).max(50),
+  focusPilot: z.string().optional(),
+  focusPilotContext: z.string().optional(),
 })
 
 export const updateGrandPrixSchema = createGrandPrixSchema.partial().omit({ seasonId: true })
@@ -21,12 +24,31 @@ export const updateGrandPrixSchema = createGrandPrixSchema.partial().omit({ seas
 export type CreateGrandPrixData = z.infer<typeof createGrandPrixSchema>
 export type UpdateGrandPrixData = z.infer<typeof updateGrandPrixSchema>
 
+// Tipo extendido para incluir información calculada
+export type GrandPrixWithDetails = GrandPrix & {
+  _count?: {
+    predictions?: number
+    gpQuestions?: number
+  }
+  season?: {
+    year: number
+    name: string
+  }
+  isDeadlinePassed?: boolean
+  formattedDates?: {
+    race: string
+    qualifying: string
+    raceLocal: string
+    qualifyingLocal: string
+  }
+}
+
 // Funciones de servicio
 
 export async function getAllGrandPrix(seasonId?: string) {
   const where: Prisma.GrandPrixWhereInput = seasonId ? { seasonId } : {}
   
-  return await prisma.grandPrix.findMany({
+  const grandPrix = await prisma.grandPrix.findMany({
     where,
     orderBy: [
       { season: { year: 'desc' } },
@@ -42,10 +64,13 @@ export async function getAllGrandPrix(seasonId?: string) {
       },
     },
   })
+  
+  // Añadir información de fechas formateadas y deadline
+  return grandPrix.map(gp => addFormattedDates(gp))
 }
 
 export async function getGrandPrixById(id: string) {
-  return await prisma.grandPrix.findUnique({
+  const gp = await prisma.grandPrix.findUnique({
     where: { id },
     include: {
       season: true,
@@ -58,19 +83,25 @@ export async function getGrandPrixById(id: string) {
       _count: {
         select: {
           predictions: true,
+          gpQuestions: true,
         },
       },
     },
   })
+  
+  if (!gp) return null
+  
+  return addFormattedDates(gp)
 }
 
 export async function getGrandPrixBySeasonAndRound(seasonId: string, round: number) {
-  return await prisma.grandPrix.findFirst({
+  const gp = await prisma.grandPrix.findFirst({
     where: {
       seasonId,
       round,
     },
     include: {
+      season: true,
       gpQuestions: {
         include: {
           question: true,
@@ -79,6 +110,10 @@ export async function getGrandPrixBySeasonAndRound(seasonId: string, round: numb
       },
     },
   })
+  
+  if (!gp) return null
+  
+  return addFormattedDates(gp)
 }
 
 export async function createGrandPrix(data: CreateGrandPrixData) {
@@ -118,9 +153,17 @@ export async function createGrandPrix(data: CreateGrandPrixData) {
     },
   })
   
-  // Obtener las preguntas estándar y asignarlas automáticamente
+  // Obtener las preguntas estándar (clásicas y strollómetro) y asignarlas automáticamente
   const standardQuestions = await prisma.question.findMany({
-    orderBy: { createdAt: 'asc' },
+    where: {
+      category: {
+        in: ['CLASSIC', 'STROLLOMETER']
+      }
+    },
+    orderBy: [
+      { category: 'asc' },
+      { createdAt: 'asc' }
+    ],
   })
   
   if (standardQuestions.length > 0) {
@@ -134,7 +177,7 @@ export async function createGrandPrix(data: CreateGrandPrixData) {
     })
   }
   
-  return grandPrix
+  return addFormattedDates(grandPrix)
 }
 
 export async function updateGrandPrix(id: string, data: UpdateGrandPrixData) {
@@ -171,7 +214,7 @@ export async function updateGrandPrix(id: string, data: UpdateGrandPrixData) {
     }
   }
   
-  return await prisma.grandPrix.update({
+  const gp = await prisma.grandPrix.update({
     where: { id },
     data: validated,
     include: {
@@ -184,6 +227,8 @@ export async function updateGrandPrix(id: string, data: UpdateGrandPrixData) {
       },
     },
   })
+  
+  return addFormattedDates(gp)
 }
 
 export async function deleteGrandPrix(id: string) {
@@ -204,6 +249,36 @@ export async function deleteGrandPrix(id: string) {
 
 // Funciones auxiliares
 
+function addFormattedDates(gp: GrandPrix & {
+  season?: { year: number; name: string }
+  _count?: { predictions?: number; gpQuestions?: number }
+}): GrandPrixWithDetails {
+  const now = new Date()
+  const isDeadlinePassed = now >= new Date(gp.qualifyingDate)
+  
+  // Formatear fechas en UTC y zona local
+  const formattedDates = {
+    race: gp.raceDate.toISOString(),
+    qualifying: gp.qualifyingDate.toISOString(),
+    raceLocal: formatInTimeZone(
+      gp.raceDate,
+      gp.timezone,
+      'MMM dd, yyyy HH:mm zzz'
+    ),
+    qualifyingLocal: formatInTimeZone(
+      gp.qualifyingDate,
+      gp.timezone,
+      'MMM dd, yyyy HH:mm zzz'
+    ),
+  }
+  
+  return {
+    ...gp,
+    isDeadlinePassed,
+    formattedDates,
+  }
+}
+
 export async function getUpcomingGrandPrix(workspaceId: string) {
   const now = new Date()
   
@@ -221,7 +296,7 @@ export async function getUpcomingGrandPrix(workspaceId: string) {
   }
   
   // Obtener el próximo GP (donde la fecha de clasificación aún no ha pasado)
-  return await prisma.grandPrix.findFirst({
+  const gp = await prisma.grandPrix.findFirst({
     where: {
       seasonId: activeWorkspaceSeason.seasonId,
       qualifyingDate: {
@@ -239,6 +314,10 @@ export async function getUpcomingGrandPrix(workspaceId: string) {
       },
     },
   })
+  
+  if (!gp) return null
+  
+  return addFormattedDates(gp)
 }
 
 export async function getPastGrandPrix(workspaceId: string) {
@@ -258,7 +337,7 @@ export async function getPastGrandPrix(workspaceId: string) {
   }
   
   // Obtener GPs pasados (donde la fecha de carrera ya pasó)
-  return await prisma.grandPrix.findMany({
+  const grandPrix = await prisma.grandPrix.findMany({
     where: {
       seasonId: activeWorkspaceSeason.seasonId,
       raceDate: {
@@ -267,6 +346,7 @@ export async function getPastGrandPrix(workspaceId: string) {
     },
     orderBy: { round: 'desc' },
     include: {
+      season: true,
       _count: {
         select: {
           predictions: true,
@@ -274,6 +354,8 @@ export async function getPastGrandPrix(workspaceId: string) {
       },
     },
   })
+  
+  return grandPrix.map(gp => addFormattedDates(gp))
 }
 
 // Función para verificar si un GP está bloqueado para predicciones
@@ -289,4 +371,121 @@ export async function isGrandPrixLocked(grandPrixId: string): Promise<boolean> {
   
   // El GP se bloquea cuando comienza la clasificación
   return new Date() >= gp.qualifyingDate
+}
+
+// Funciones adicionales para manejo de zonas horarias
+
+// Función para convertir hora local a UTC para almacenamiento
+export function convertLocalDateToUTC(localDate: Date, timezone: string): Date {
+  return fromZonedTime(localDate, timezone)
+}
+
+// Función para obtener la hora actual en la zona del GP
+export function getCurrentTimeInGPTimezone(timezone: string): Date {
+  return toZonedTime(new Date(), timezone)
+}
+
+// Función para verificar deadlines próximos
+export async function getGrandPrixWithUpcomingDeadlines(hoursAhead: number = 24) {
+  const now = new Date()
+  const futureDate = new Date(now.getTime() + hoursAhead * 60 * 60 * 1000)
+  
+  const grandPrix = await prisma.grandPrix.findMany({
+    where: {
+      qualifyingDate: {
+        gte: now,
+        lte: futureDate,
+      },
+    },
+    orderBy: { qualifyingDate: 'asc' },
+    include: {
+      season: true,
+      _count: {
+        select: {
+          predictions: true,
+        },
+      },
+    },
+  })
+  
+  return grandPrix.map(gp => addFormattedDates(gp))
+}
+
+// Funciones para manejo del piloto en foco
+
+export async function updateFocusPilot(id: string, focusPilot: string | null, focusPilotContext?: string | null) {
+  return await prisma.grandPrix.update({
+    where: { id },
+    data: {
+      focusPilot,
+      focusPilotContext,
+    },
+  })
+}
+
+// Función para crear preguntas del piloto en foco
+export async function createPilotFocusQuestions(grandPrixId: string, pilotName: string) {
+  // Plantillas de preguntas para el piloto en foco
+  const pilotQuestions = [
+    {
+      text: `¿En qué posición clasificará ${pilotName}?`,
+      type: 'MULTIPLE_CHOICE',
+      defaultPoints: 8,
+      options: { type: 'custom', values: ['P1-P5', 'P6-P10', 'P11-P15', 'P16-P20'] }
+    },
+    {
+      text: `¿En qué posición terminará ${pilotName} la carrera?`,
+      type: 'MULTIPLE_CHOICE',
+      defaultPoints: 10,
+      options: { type: 'custom', values: ['P1-P3', 'P4-P6', 'P7-P10', 'P11-P15', 'P16-P20', 'DNF'] }
+    },
+    {
+      text: `¿${pilotName} hará podio?`,
+      type: 'BOOLEAN',
+      defaultPoints: 12,
+      options: { type: 'custom', values: ['Sí', 'No'] }
+    },
+    {
+      text: `¿${pilotName} terminará por delante de su compañero de equipo?`,
+      type: 'BOOLEAN',
+      defaultPoints: 8,
+      options: { type: 'custom', values: ['Sí', 'No'] }
+    }
+  ]
+
+  // Crear las preguntas en la base de datos
+  const createdQuestions = []
+  for (const q of pilotQuestions) {
+    const question = await prisma.question.create({
+      data: {
+        text: q.text,
+        type: q.type as QuestionType,
+        category: 'PILOT_FOCUS',
+        defaultPoints: q.defaultPoints,
+        options: q.options,
+      },
+    })
+    createdQuestions.push(question)
+  }
+
+  // Obtener el orden máximo actual en el GP
+  const maxOrder = await prisma.gPQuestion.findFirst({
+    where: { grandPrixId },
+    orderBy: { order: 'desc' },
+    select: { order: true },
+  })
+
+  const startOrder = (maxOrder?.order || 0) + 1
+
+  // Asignar las preguntas al GP
+  await prisma.gPQuestion.createMany({
+    data: createdQuestions.map((question, index) => ({
+      grandPrixId,
+      questionId: question.id,
+      points: question.defaultPoints,
+      order: startOrder + index,
+    })),
+  })
+
+  return createdQuestions
 }

@@ -28,10 +28,11 @@
 **Tasks:**
 - [x] Create global admin interface for season management
 - [x] Implement season creation with automatic workspace propagation
-- [ ] Build Grand Prix CRUD operations with timezone support
-- [ ] Add deadline management system with automatic locking
-- [ ] Create question library management interface
-- [ ] Implement GP-specific question configuration
+- [x] Build Grand Prix CRUD operations with timezone support
+- [x] Add deadline management system with automatic locking
+- [x] Create question library management interface
+- [x] Implement GP-specific question configuration
+- [x] Implement the new requirement (category questions). Ask the user to plan that.
 - [ ] Add validation for race dates and qualifying times
 - [ ] Build workspace season enrollment system
 

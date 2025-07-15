@@ -158,19 +158,21 @@ model WorkspaceSeason {
 }
 
 model GrandPrix {
-  id             String   @id @default(cuid())
-  seasonId       String
-  round          Int      // Número de carrera en la temporada
-  name           String   // "Australian Grand Prix"
-  location       String   // "Melbourne"
-  country        String   // "Australia"
-  circuit        String   // "Albert Park"
-  raceDate       DateTime
-  qualifyingDate DateTime
-  isSprint       Boolean  @default(false)
-  timezone       String   // "Australia/Melbourne"
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                String   @id @default(cuid())
+  seasonId          String
+  round             Int      // Número de carrera en la temporada
+  name              String   // "Australian Grand Prix"
+  location          String   // "Melbourne"
+  country           String   // "Australia"
+  circuit           String   // "Albert Park"
+  raceDate          DateTime
+  qualifyingDate    DateTime
+  isSprint          Boolean  @default(false)
+  timezone          String   // "Australia/Melbourne"
+  focusPilot        String?  // Nombre del piloto en el foco
+  focusPilotContext String?  // Contexto o razón de la selección
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
   
   // Relaciones
   season        Season       @relation(fields: [seasonId], references: [id], onDelete: Cascade)
@@ -182,34 +184,45 @@ model GrandPrix {
 }
 
 model Question {
-  id            String       @id @default(cuid())
-  text          String       // "¿Quién ganará la carrera?"
+  id            String           @id @default(cuid())
+  text          String           // "¿Quién ganará la carrera?"
   type          QuestionType
-  defaultPoints Int          @default(10)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  category      QuestionCategory
+  defaultPoints Int              @default(10)
+  options       Json?            // Opciones predefinidas para la pregunta
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
   
   // Relaciones
   gpQuestions   GPQuestion[]
   
+  @@index([category])
   @@map("questions")
 }
 
 model GPQuestion {
-  id            String   @id @default(cuid())
+  id            String           @id @default(cuid())
   grandPrixId   String
-  questionId    String
-  points        Int      // Puntos específicos para este GP
-  order         Int      // Orden de aparición en el formulario
+  questionId    String?          // Opcional para preguntas inline
+  points        Int              // Puntos específicos para este GP
+  order         Int              // Orden de aparición en el formulario
+  
+  // Campos para preguntas inline (cuando questionId es null)
+  text          String?          // Texto de la pregunta inline
+  type          QuestionType?    // Tipo de la pregunta inline
+  category      QuestionCategory? // Categoría de la pregunta inline
+  options       Json?            // Opciones para la pregunta inline
+  
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   
   // Relaciones
   grandPrix     GrandPrix    @relation(fields: [grandPrixId], references: [id], onDelete: Cascade)
-  question      Question     @relation(fields: [questionId], references: [id])
+  question      Question?    @relation(fields: [questionId], references: [id])
   predictions   Prediction[]
   
   @@unique([grandPrixId, questionId])
+  @@index([grandPrixId, category])
   @@map("gp_questions")
 }
 
@@ -261,4 +274,15 @@ enum QuestionType {
   DNF           // Did Not Finish
   POINTS_FINISH // Terminar en puntos
   TEAM_WINNER   // Equipo ganador
+  MULTIPLE_CHOICE // Opción múltiple
+  NUMERIC       // Respuesta numérica
+  BOOLEAN       // Sí/No
+  HEAD_TO_HEAD  // Comparación entre pilotos
+}
+
+// Enum para categorías de preguntas
+enum QuestionCategory {
+  CLASSIC       // Preguntas clásicas
+  PILOT_FOCUS   // Piloto en el foco
+  STROLLOMETER  // Strollómetro
 }

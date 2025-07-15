@@ -1,4 +1,6 @@
-import { PrismaClient, Role, WorkspaceRole, QuestionType } from '@prisma/client'
+import { PrismaClient, Role, WorkspaceRole, QuestionType, QuestionCategory } from '@prisma/client'
+import { DRIVER_NAMES } from '../src/lib/constants/drivers'
+import { TEAM_NAMES } from '../src/lib/constants/teams'
 
 const prisma = new PrismaClient()
 
@@ -158,22 +160,200 @@ async function main() {
 
   console.log(`Created ${grandPrixList.length} Grand Prix for 2025 season`)
 
-  // Crear preguntas estándar
-  const questions = [
-    { text: '¿Quién ganará la carrera?', type: QuestionType.WINNER, defaultPoints: 25 },
-    { text: '¿Quién conseguirá la pole position?', type: QuestionType.POLE_POSITION, defaultPoints: 10 },
-    { text: '¿Quién hará la vuelta rápida?', type: QuestionType.FASTEST_LAP, defaultPoints: 5 },
-    { text: '¿Quiénes formarán el podio? (Top 3)', type: QuestionType.PODIUM, defaultPoints: 15 },
-    { text: '¿Qué equipo ganará la carrera?', type: QuestionType.TEAM_WINNER, defaultPoints: 10 },
+  // Crear preguntas clásicas
+  const classicQuestions = [
+    { 
+      text: '¿Quién ganará la carrera?', 
+      type: QuestionType.WINNER, 
+      category: QuestionCategory.CLASSIC,
+      defaultPoints: 25,
+      options: { type: 'drivers' }
+    },
+    { 
+      text: '¿Quién conseguirá el segundo puesto?', 
+      type: QuestionType.PODIUM, 
+      category: QuestionCategory.CLASSIC,
+      defaultPoints: 18,
+      options: { type: 'drivers' }
+    },
+    { 
+      text: '¿Quién conseguirá el tercer puesto?', 
+      type: QuestionType.PODIUM, 
+      category: QuestionCategory.CLASSIC,
+      defaultPoints: 15,
+      options: { type: 'drivers' }
+    },
+    { 
+      text: '¿Quién terminará último en los puntos (P10)?', 
+      type: QuestionType.POINTS_FINISH, 
+      category: QuestionCategory.CLASSIC,
+      defaultPoints: 10,
+      options: { type: 'drivers' }
+    },
+    { 
+      text: '¿Cuántos abandonos habrá en la carrera?', 
+      type: QuestionType.NUMERIC, 
+      category: QuestionCategory.CLASSIC,
+      defaultPoints: 8,
+      options: { type: 'custom', values: ['0', '1', '2', '3', '4', '5', '6+'] }
+    },
+    { 
+      text: '¿Quién hará la vuelta rápida?', 
+      type: QuestionType.FASTEST_LAP, 
+      category: QuestionCategory.CLASSIC,
+      defaultPoints: 5,
+      options: { type: 'drivers' }
+    },
+    { 
+      text: '¿Habrá Safety Car o Virtual Safety Car?', 
+      type: QuestionType.BOOLEAN, 
+      category: QuestionCategory.CLASSIC,
+      defaultPoints: 5,
+      options: { type: 'custom', values: ['Sí', 'No'] }
+    },
+    { 
+      text: '¿Quién ganará más posiciones respecto a la clasificación?', 
+      type: QuestionType.MULTIPLE_CHOICE, 
+      category: QuestionCategory.CLASSIC,
+      defaultPoints: 10,
+      options: { type: 'drivers' }
+    },
+    { 
+      text: '¿Quién perderá más posiciones respecto a la clasificación?', 
+      type: QuestionType.MULTIPLE_CHOICE, 
+      category: QuestionCategory.CLASSIC,
+      defaultPoints: 10,
+      options: { type: 'drivers' }
+    },
+    { 
+      text: '¿Qué equipo hará el pit stop más rápido?', 
+      type: QuestionType.TEAM_WINNER, 
+      category: QuestionCategory.CLASSIC,
+      defaultPoints: 5,
+      options: { type: 'teams' }
+    },
+    { 
+      text: '¿Algún piloto recibirá penalización durante la carrera?', 
+      type: QuestionType.BOOLEAN, 
+      category: QuestionCategory.CLASSIC,
+      defaultPoints: 5,
+      options: { type: 'custom', values: ['Sí', 'No'] }
+    },
+    { 
+      text: '¿Alguien hará un pit stop de más de 3 segundos?', 
+      type: QuestionType.BOOLEAN, 
+      category: QuestionCategory.CLASSIC,
+      defaultPoints: 3,
+      options: { type: 'custom', values: ['Sí', 'No'] }
+    },
+    { 
+      text: '¿Quién será el Driver of the Day?', 
+      type: QuestionType.MULTIPLE_CHOICE, 
+      category: QuestionCategory.CLASSIC,
+      defaultPoints: 8,
+      options: { type: 'drivers' }
+    },
+    { 
+      text: '¿Algún equipo cometerá un error estratégico grave?', 
+      type: QuestionType.MULTIPLE_CHOICE, 
+      category: QuestionCategory.CLASSIC,
+      defaultPoints: 8,
+      options: { type: 'teams_with_none', values: [...TEAM_NAMES, 'Ninguno'] }
+    },
+    { 
+      text: '¿Qué equipo logrará un undercut exitoso?', 
+      type: QuestionType.MULTIPLE_CHOICE, 
+      category: QuestionCategory.CLASSIC,
+      defaultPoints: 5,
+      options: { type: 'teams_with_none', values: [...TEAM_NAMES, 'Ninguno'] }
+    },
+    { 
+      text: '¿Cuántos pilotos terminarán la carrera?', 
+      type: QuestionType.NUMERIC, 
+      category: QuestionCategory.CLASSIC,
+      defaultPoints: 5,
+      options: { type: 'custom', values: ['<16', '16', '17', '18', '19', '20'] }
+    },
+    { 
+      text: '¿Algún equipo tendrá un problema ridículo en boxes?', 
+      type: QuestionType.MULTIPLE_CHOICE, 
+      category: QuestionCategory.CLASSIC,
+      defaultPoints: 8,
+      options: { type: 'teams_with_none', values: [...TEAM_NAMES, 'Ninguno'] }
+    },
+    { 
+      text: '¿Quién terminará la carrera por delante? (Head to Head)', 
+      type: QuestionType.HEAD_TO_HEAD, 
+      category: QuestionCategory.CLASSIC,
+      defaultPoints: 6,
+      options: { type: 'custom', values: ['Variable según GP'] }
+    },
+    { 
+      text: '¿Qué equipo sumará más puntos en la carrera?', 
+      type: QuestionType.TEAM_WINNER, 
+      category: QuestionCategory.CLASSIC,
+      defaultPoints: 8,
+      options: { type: 'teams' }
+    },
+    { 
+      text: '¿Quién conseguirá la pole position?', 
+      type: QuestionType.POLE_POSITION, 
+      category: QuestionCategory.CLASSIC,
+      defaultPoints: 10,
+      options: { type: 'drivers' }
+    }
   ]
 
+  // Crear preguntas del Strollómetro
+  const strollometerQuestions = [
+    { 
+      text: '¿Hasta qué ronda llegará Stroll en la clasificación?', 
+      type: QuestionType.MULTIPLE_CHOICE, 
+      category: QuestionCategory.STROLLOMETER,
+      defaultPoints: 8,
+      options: { type: 'custom', values: ['Q1 (16-20)', 'Q2 (11-15)', 'Q3 (1-10)'] }
+    },
+    { 
+      text: '¿En qué posición terminará Stroll la carrera?', 
+      type: QuestionType.MULTIPLE_CHOICE, 
+      category: QuestionCategory.STROLLOMETER,
+      defaultPoints: 10,
+      options: { type: 'custom', values: ['P1-P5', 'P6-P10', 'P11-P15', 'P16-P20', 'DNF'] }
+    },
+    { 
+      text: '¿Stroll se verá involucrado en algún incidente/accidente?', 
+      type: QuestionType.BOOLEAN, 
+      category: QuestionCategory.STROLLOMETER,
+      defaultPoints: 6,
+      options: { type: 'custom', values: ['Sí', 'No'] }
+    },
+    { 
+      text: '¿Stroll terminará por delante de Alonso?', 
+      type: QuestionType.BOOLEAN, 
+      category: QuestionCategory.STROLLOMETER,
+      defaultPoints: 12,
+      options: { type: 'custom', values: ['Sí', 'No'] }
+    },
+    { 
+      text: '¿Stroll sumará puntos en la carrera?', 
+      type: QuestionType.BOOLEAN, 
+      category: QuestionCategory.STROLLOMETER,
+      defaultPoints: 8,
+      options: { type: 'custom', values: ['Sí', 'No'] }
+    }
+  ]
+
+  const allQuestions = [...classicQuestions, ...strollometerQuestions]
+
   const questionList = []
-  for (const q of questions) {
+  for (const q of allQuestions) {
     const question = await prisma.question.create({
       data: {
         text: q.text,
         type: q.type,
+        category: q.category,
         defaultPoints: q.defaultPoints,
+        options: q.options,
       },
     })
     questionList.push(question)

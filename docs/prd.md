@@ -19,6 +19,40 @@
 - **Por qué importa**: Es el corazón del juego - permite competir basado en conocimiento de F1
 - **Cómo funciona**: Formularios dropdown mobile-friendly con deadline automático al inicio de la Qualy
 
+### 🎯 **Secciones de Preguntas**
+El sistema de predicciones se estructura en **3 secciones temáticas** que ofrecen diferentes tipos de desafíos y mantienen el juego dinámico:
+
+#### **1. Preguntas Clásicas** 
+- **Qué incluye**: Predicciones tradicionales del formato original (pole position, ganador de carrera, podio, fastest lap, primer abandono, etc.)
+- **Características**: Preguntas estándar que aparecen en todos los GP con opciones consistentes
+- **Propósito**: Mantener la base competitiva familiar del juego original
+- **Puntos**: Sistema establecido (25 pts ganador, 18 pts pole, etc.)
+
+#### **2. Piloto en el Foco**
+- **Qué incluye**: Sección dedicada al piloto destacado elegido para ese GP específico
+- **Características**: 
+  - Un piloto diferente por GP (elegido por el superadmin)
+  - Preguntas específicas sobre su desempeño: posición final, head-to-head vs compañero, performance en clasificación, etc.
+  - Preguntas contextuales basadas en la situación actual del piloto
+- **Propósito**: Añadir foco narrativo y seguimiento específico a pilotos relevantes
+- **Puntos**: Escala ajustada según dificultad de predicción
+
+#### **3. Strollómetro**
+- **Qué incluye**: Sección dedicada exclusivamente a Lance Stroll
+- **Características**: 
+  - Preguntas recurrentes sobre Stroll que se mantienen consistentes GP a GP
+  - Ejemplos: "¿Terminará la carrera?", "¿Superará a su compañero?", "¿Hará un spin?"
+  - Elemento de humor y entretenimiento dentro del juego
+- **Propósito**: Añadir un elemento divertido y predecible que genera engagement
+- **Puntos**: Sistema específico para mantener balance competitivo
+
+**Beneficios del sistema de 3 secciones**:
+- **Variedad**: Cada GP ofrece experiencias diferentes manteniendo elementos familiares
+- **Engagement**: El "Piloto en el Foco" mantiene conexión con narrativas actuales de F1
+- **Humor**: El "Strollómetro" añade diversión sin comprometer la competitividad
+- **Escalabilidad**: Permite añadir nuevas secciones temáticas en el futuro
+- **Personalización**: Los superadmins pueden ajustar preguntas del "Piloto en el Foco" según contexto
+
 ### 🏆 **Sistema de Puntos Dinámico**
 - **Qué hace**: Asigna puntos según dificultad de predicción (25 pts ganador, 18 pts pole, 1 pt team pit stop, etc.)
 - **Por qué importa**: Balancea la competencia premiando tanto aciertos obvios como predicciones difíciles
@@ -30,9 +64,13 @@
 - **Cómo funciona**: Los usuarios se unen automáticamente a la temporada activa, pueden optar por DNF
 
 ### 📋 **Configuración Flexible de Preguntas**
-- **Qué hace**: Combina preguntas fijas (pole, ganador) con preguntas variables específicas del GP (piloto de moda, situaciones actuales)
-- **Por qué importa**: Mantiene el juego fresco y relevante a las noticias actuales de F1
-- **Cómo funciona**: Biblioteca de preguntas predefinidas + capacidad de personalización por GP sin afectar templates
+- **Qué hace**: Sistema híbrido que combina preguntas fijas por sección con personalización específica por GP
+- **Por qué importa**: Mantiene estructura predecible mientras permite adaptación a narrativas actuales de F1
+- **Cómo funciona**: 
+  - **Preguntas Clásicas**: Biblioteca fija de preguntas template reutilizables en todos los GP
+  - **Piloto en el Foco**: Selección de piloto + preguntas contextuales personalizables por GP
+  - **Strollómetro**: Set consistente de preguntas sobre Stroll con opciones estándar
+  - Personalización sin afectar templates base del sistema
 
 ### 📱 **Experiencia Mobile-First**
 - **Qué hace**: Interfaz responsive optimizada para hacer predicciones desde el móvil
@@ -89,11 +127,15 @@
 **Flujo de Configuración (Superadmin)**
 1. Accede a panel de admin del workspace
 2. Crea nuevo GP con fecha y hora de Qualy
-3. Selecciona preguntas fijas + añade preguntas variables del GP
-4. Personaliza preguntas variables sin modificar templates
-5. Activa GP - notificaciones automáticas a miembros
-6. Post-carrera: ingresa resultados reales
-7. Sistema calcula y actualiza puntos automáticamente
+3. **Configura las 3 secciones de preguntas**:
+   - **Preguntas Clásicas**: Selecciona del set estándar (pole, ganador, etc.)
+   - **Piloto en el Foco**: Elige piloto destacado y configura preguntas contextuales
+   - **Strollómetro**: Confirma preguntas estándar sobre Stroll (pre-configuradas)
+4. Personaliza preguntas específicas del GP sin modificar templates
+5. Revisa distribución de puntos por sección
+6. Activa GP - notificaciones automáticas a miembros
+7. Post-carrera: ingresa resultados reales para las 3 secciones
+8. Sistema calcula y actualiza puntos automáticamente
 
 **Flujo de Temporada (Workspace)**
 1. Superadmin recibe nueva temporada creada por admin global
@@ -129,9 +171,13 @@
 
 **GrandPrix**
 - id, seasonId, name, location, qualyDateTime, raceDateTime, isActive, deadlinePassed
+- **focusPilot**: Piloto seleccionado para la sección "Piloto en el Foco" de este GP
+- **focusPilotContext**: Contexto/razón de la selección del piloto (texto libre)
 
 **Question (Biblioteca de Preguntas)**
 - id, text, type, points, isTemplate, category, options (JSON)
+- **Categorías**: "classic" (preguntas clásicas), "pilot_focus" (piloto en el foco), "strollometer" (strollómetro)
+- **Tipos**: "single_choice", "multiple_choice", "numeric", "boolean"
 
 **GPQuestion (Preguntas por GP)**
 - id, grandPrixId, questionId, customText, customOptions (JSON), points, order

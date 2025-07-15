@@ -1,26 +1,36 @@
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { QuestionType } from '@prisma/client'
+import { QuestionType, QuestionCategory } from '@prisma/client'
 
 // Schemas de validación
 export const createQuestionSchema = z.object({
   text: z.string().min(1).max(200),
   type: z.nativeEnum(QuestionType),
+  category: z.nativeEnum(QuestionCategory),
   defaultPoints: z.number().int().min(1).max(100).default(10),
+  options: z.any().optional(),
 })
 
 export const updateQuestionSchema = createQuestionSchema.partial()
 
 export const createGPQuestionSchema = z.object({
   grandPrixId: z.string().cuid(),
-  questionId: z.string().cuid(),
+  questionId: z.string().cuid().optional(),
   points: z.number().int().min(1).max(100),
-  order: z.number().int().min(1).max(20),
+  order: z.number().int().min(1).max(100),
+  // Para preguntas inline
+  text: z.string().min(1).max(500).optional(),
+  type: z.enum(['WINNER', 'PODIUM', 'POINTS_FINISH', 'FASTEST_LAP', 'POLE_POSITION', 'DNF', 'TEAM_WINNER', 'HEAD_TO_HEAD', 'MULTIPLE_CHOICE', 'NUMERIC', 'BOOLEAN']).optional(),
+  category: z.enum(['CLASSIC', 'PILOT_FOCUS', 'STROLLOMETER']).optional(),
+  options: z.any().optional(),
 })
 
 export const updateGPQuestionSchema = z.object({
   points: z.number().int().min(1).max(100).optional(),
-  order: z.number().int().min(1).max(20).optional(),
+  order: z.number().int().min(1).max(100).optional(),
+  text: z.string().min(1).max(500).optional(),
+  type: z.enum(['WINNER', 'PODIUM', 'POINTS_FINISH', 'FASTEST_LAP', 'POLE_POSITION', 'DNF', 'TEAM_WINNER', 'HEAD_TO_HEAD', 'MULTIPLE_CHOICE', 'NUMERIC', 'BOOLEAN']).optional(),
+  options: z.any().optional(),
 })
 
 export type CreateQuestionData = z.infer<typeof createQuestionSchema>
@@ -65,6 +75,32 @@ export async function getQuestionsByType(type: QuestionType) {
     where: { type },
     orderBy: { defaultPoints: 'desc' },
   })
+}
+
+export async function getQuestionsByCategory(category: QuestionCategory) {
+  return await prisma.question.findMany({
+    where: { category },
+    orderBy: { createdAt: 'asc' },
+    include: {
+      _count: {
+        select: {
+          gpQuestions: true,
+        },
+      },
+    },
+  })
+}
+
+export async function getClassicQuestions() {
+  return await getQuestionsByCategory(QuestionCategory.CLASSIC)
+}
+
+export async function getStrollometerQuestions() {
+  return await getQuestionsByCategory(QuestionCategory.STROLLOMETER)
+}
+
+export async function getPilotFocusQuestions() {
+  return await getQuestionsByCategory(QuestionCategory.PILOT_FOCUS)
 }
 
 export async function createQuestion(data: CreateQuestionData) {
@@ -127,7 +163,7 @@ export async function deleteQuestion(id: string) {
 // Funciones de servicio para GPQuestion
 
 export async function getGPQuestions(grandPrixId: string) {
-  return await prisma.gPQuestion.findMany({
+  const gpQuestions = await prisma.gPQuestion.findMany({
     where: { grandPrixId },
     orderBy: { order: 'asc' },
     include: {
@@ -139,6 +175,38 @@ export async function getGPQuestions(grandPrixId: string) {
       },
     },
   })
+  
+  // Transformar para que las preguntas inline tengan la estructura esperada
+  return gpQuestions.map(gpq => ({
+    ...gpq,
+    question: gpq.question || {
+      id: `inline-${gpq.id}`,
+      text: gpq.text!,
+      type: gpq.type!,
+      category: gpq.category!,
+      defaultPoints: gpq.points,
+      options: gpq.options,
+      createdAt: gpq.createdAt,
+      updatedAt: gpq.updatedAt,
+    },
+  }))
+}
+
+export async function getGPQuestionsByCategory(grandPrixId: string) {
+  const questions = await getGPQuestions(grandPrixId)
+
+  // Agrupar por categoría
+  const grouped = {
+    [QuestionCategory.CLASSIC]: [] as typeof questions,
+    [QuestionCategory.PILOT_FOCUS]: [] as typeof questions,
+    [QuestionCategory.STROLLOMETER]: [] as typeof questions,
+  }
+
+  questions.forEach(q => {
+    grouped[q.question.category].push(q)
+  })
+
+  return grouped
 }
 
 export async function addQuestionToGP(data: CreateGPQuestionData) {
@@ -153,27 +221,35 @@ export async function addQuestionToGP(data: CreateGPQuestionData) {
     throw new Error('Grand Prix no encontrado')
   }
   
-  // Verificar que la pregunta existe
-  const question = await prisma.question.findUnique({
-    where: { id: validated.questionId },
-  })
-  
-  if (!question) {
-    throw new Error('Pregunta no encontrada')
-  }
-  
-  // Verificar que no exista ya esta pregunta en el GP
-  const existing = await prisma.gPQuestion.findUnique({
-    where: {
-      grandPrixId_questionId: {
-        grandPrixId: validated.grandPrixId,
-        questionId: validated.questionId,
+  // Si es una pregunta de biblioteca
+  if (validated.questionId) {
+    // Verificar que la pregunta existe
+    const question = await prisma.question.findUnique({
+      where: { id: validated.questionId },
+    })
+    
+    if (!question) {
+      throw new Error('Pregunta no encontrada')
+    }
+    
+    // Verificar que no exista ya esta pregunta en el GP
+    const existing = await prisma.gPQuestion.findUnique({
+      where: {
+        grandPrixId_questionId: {
+          grandPrixId: validated.grandPrixId,
+          questionId: validated.questionId,
+        },
       },
-    },
-  })
-  
-  if (existing) {
-    throw new Error('Esta pregunta ya está asignada a este Grand Prix')
+    })
+    
+    if (existing) {
+      throw new Error('Esta pregunta ya está asignada a este Grand Prix')
+    }
+  } else {
+    // Es una pregunta inline, validar que tenga los campos necesarios
+    if (!validated.text || !validated.type || !validated.category) {
+      throw new Error('Las preguntas inline requieren texto, tipo y categoría')
+    }
   }
   
   return await prisma.gPQuestion.create({
@@ -196,29 +272,53 @@ export async function updateGPQuestion(id: string, data: UpdateGPQuestionData) {
   })
 }
 
-export async function removeQuestionFromGP(grandPrixId: string, questionId: string) {
-  // Verificar si hay predicciones para esta pregunta en este GP
-  const predictionsCount = await prisma.prediction.count({
-    where: {
-      grandPrixId,
-      gpQuestion: {
-        questionId,
+export async function removeQuestionFromGP(grandPrixId: string, questionIdOrGPQuestionId: string) {
+  // Determinar si es una pregunta inline (empieza con "inline-") o de biblioteca
+  const isInline = questionIdOrGPQuestionId.startsWith('inline-')
+  
+  if (isInline) {
+    // Es una pregunta inline, usar el GPQuestion ID directamente
+    const gpQuestionId = questionIdOrGPQuestionId.replace('inline-', '')
+    
+    // Verificar si hay predicciones
+    const predictionsCount = await prisma.prediction.count({
+      where: {
+        gpQuestionId,
       },
-    },
-  })
-  
-  if (predictionsCount > 0) {
-    throw new Error('No se puede eliminar una pregunta que tiene predicciones registradas')
-  }
-  
-  return await prisma.gPQuestion.delete({
-    where: {
-      grandPrixId_questionId: {
+    })
+    
+    if (predictionsCount > 0) {
+      throw new Error('No se puede eliminar una pregunta que tiene predicciones registradas')
+    }
+    
+    return await prisma.gPQuestion.delete({
+      where: { id: gpQuestionId },
+    })
+  } else {
+    // Es una pregunta de biblioteca
+    // Verificar si hay predicciones para esta pregunta en este GP
+    const predictionsCount = await prisma.prediction.count({
+      where: {
         grandPrixId,
-        questionId,
+        gpQuestion: {
+          questionId: questionIdOrGPQuestionId,
+        },
       },
-    },
-  })
+    })
+    
+    if (predictionsCount > 0) {
+      throw new Error('No se puede eliminar una pregunta que tiene predicciones registradas')
+    }
+    
+    return await prisma.gPQuestion.delete({
+      where: {
+        grandPrixId_questionId: {
+          grandPrixId,
+          questionId: questionIdOrGPQuestionId,
+        },
+      },
+    })
+  }
 }
 
 // Función para reordenar preguntas en un GP
@@ -236,9 +336,17 @@ export async function reorderGPQuestions(grandPrixId: string, questionOrders: { 
 
 // Función para aplicar preguntas estándar a un GP
 export async function applyStandardQuestionsToGP(grandPrixId: string) {
-  // Obtener todas las preguntas estándar
+  // Obtener preguntas clásicas y del Strollómetro
   const standardQuestions = await prisma.question.findMany({
-    orderBy: { createdAt: 'asc' },
+    where: {
+      category: {
+        in: [QuestionCategory.CLASSIC, QuestionCategory.STROLLOMETER]
+      }
+    },
+    orderBy: [
+      { category: 'asc' },
+      { createdAt: 'asc' }
+    ],
   })
   
   if (standardQuestions.length === 0) {
@@ -280,4 +388,55 @@ export async function applyStandardQuestionsToGP(grandPrixId: string) {
   })
   
   return newGPQuestions
+}
+
+export async function createPilotFocusQuestionsForGP(grandPrixId: string, pilotName: string) {
+  // Obtener el máximo orden actual
+  const existingQuestions = await getGPQuestions(grandPrixId)
+  const currentMaxOrder = Math.max(...existingQuestions.map(q => q.order), 0)
+  
+  const pilotQuestions = [
+    {
+      text: `¿En qué posición clasificará ${pilotName}?`,
+      type: 'MULTIPLE_CHOICE' as const,
+      defaultPoints: 8,
+      options: { type: 'custom', values: ['P1-P5', 'P6-P10', 'P11-P15', 'P16-P20'] }
+    },
+    {
+      text: `¿En qué posición terminará ${pilotName} la carrera?`,
+      type: 'MULTIPLE_CHOICE' as const,
+      defaultPoints: 10,
+      options: { type: 'custom', values: ['Podio (P1-P3)', 'P4-P5', 'P6-P10', 'P11-P15', 'P16-P20', 'No termina'] }
+    },
+    {
+      text: `¿${pilotName} ganará posiciones en carrera respecto a la clasificación?`,
+      type: 'MULTIPLE_CHOICE' as const,
+      defaultPoints: 6,
+      options: { type: 'custom', values: ['Sí, gana posiciones', 'No, pierde posiciones', 'Mantiene la posición'] }
+    },
+    {
+      text: `¿${pilotName} terminará por delante de su compañero de equipo?`,
+      type: 'BOOLEAN' as const,
+      defaultPoints: 5,
+      options: { type: 'boolean' }
+    }
+  ]
+  
+  // Crear las preguntas inline directamente en GPQuestion
+  const gpQuestions = pilotQuestions.map((q, index) => ({
+    grandPrixId,
+    text: q.text,
+    type: q.type,
+    category: QuestionCategory.PILOT_FOCUS,
+    points: q.defaultPoints,
+    options: q.options,
+    order: currentMaxOrder + index + 1,
+  }))
+  
+  // Log para depurar
+  console.log('Creando preguntas de piloto:', gpQuestions.map(q => ({ text: q.text, type: q.type })))
+  
+  return await prisma.gPQuestion.createMany({
+    data: gpQuestions,
+  })
 }
