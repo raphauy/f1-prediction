@@ -61,10 +61,10 @@ const adminNavItems = [
     badge: "grandprix"
   },
   {
-    title: "Preguntas",
-    href: "/admin/questions",
+    title: "Plantillas",
+    href: "/admin/question-templates",
     icon: HelpCircle,
-    badge: "questions"
+    badge: "templates"
   },
   {
     title: "Configuración",
@@ -79,10 +79,10 @@ interface AdminSidebarClientProps {
   workspaceCount: number
   seasonCount: number
   grandPrixCount: number
-  questionCount: number
+  templateCount: number
 }
 
-export function AdminSidebarClient({ children, userCount, workspaceCount, seasonCount, grandPrixCount, questionCount }: AdminSidebarClientProps) {
+export function AdminSidebarClient({ children, userCount, workspaceCount, seasonCount, grandPrixCount, templateCount }: AdminSidebarClientProps) {
   const pathname = usePathname()
 
   const getBadgeCount = (badgeType: string) => {
@@ -95,8 +95,8 @@ export function AdminSidebarClient({ children, userCount, workspaceCount, season
         return seasonCount
       case "grandprix":
         return grandPrixCount
-      case "questions":
-        return questionCount
+      case "templates":
+        return templateCount
       default:
         return 0
     }

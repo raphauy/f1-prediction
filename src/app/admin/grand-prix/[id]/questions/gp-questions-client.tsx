@@ -31,19 +31,47 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Plus, GripVertical, Trash2, Save, UserPlus, Loader2, Edit2 } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Plus, GripVertical, Trash2, Save, UserPlus, Loader2, Edit2, Flag, Users, HelpCircle, Hash, Binary, GitCompare, AlertTriangle } from 'lucide-react'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import {
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { DRIVER_NAMES } from '@/lib/constants/drivers'
-import type { Question, GPQuestion, QuestionCategory, QuestionType } from '@prisma/client'
+import { QUESTION_BADGES, getBadgesForType } from '@/lib/constants/question-badges'
+import type { Question, GPQuestion, QuestionCategory, QuestionType, QuestionTemplate } from '@prisma/client'
 import {
   addQuestionToGPAction,
   removeQuestionFromGPAction,
   updateGPQuestionAction,
-  // reorderGPQuestionsAction, // TODO: Implementar cuando se agregue drag and drop
-  applyStandardQuestionsAction,
+  reorderGPQuestionsAction,
   createPilotFocusQuestionsAction,
   updateGrandPrixPilotAction,
+  createQuestionFromTemplateAction,
+  applyMultipleTemplatesAction,
 } from './actions'
 import type { UpdateGPQuestionData } from '@/services/question-service'
 import { Textarea } from '@/components/ui/textarea'
@@ -52,11 +80,16 @@ interface GPQuestionsClientProps {
   grandPrixId: string
   gpQuestions: (GPQuestion & { 
     question: Question
+    template?: QuestionTemplate | null
     _count?: {
       predictions?: number
     }
   })[]
-  availableQuestions: Question[]
+  templates: (QuestionTemplate & {
+    _count?: {
+      gpQuestions?: number
+    }
+  })[]
   focusPilot?: string | null
   focusPilotContext?: string | null
 }
@@ -64,14 +97,15 @@ interface GPQuestionsClientProps {
 export function GPQuestionsClient({
   grandPrixId,
   gpQuestions,
-  availableQuestions,
+  templates,
   focusPilot,
   focusPilotContext,
 }: GPQuestionsClientProps) {
   const router = useRouter()
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [selectedQuestionId, setSelectedQuestionId] = useState('')
+  const [selectedTemplateId, setSelectedTemplateId] = useState('')
   const [customPoints, setCustomPoints] = useState('')
+  const [customText, setCustomText] = useState('')
   const [isCreatingPilotQuestion, setIsCreatingPilotQuestion] = useState(false)
   const [newQuestionText, setNewQuestionText] = useState('')
   const [newQuestionType, setNewQuestionType] = useState<QuestionType>('MULTIPLE_CHOICE' as QuestionType)
@@ -96,9 +130,22 @@ export function GPQuestionsClient({
   const [editQuestionPoints, setEditQuestionPoints] = useState('')
   const [isAddingQuestion, setIsAddingQuestion] = useState(false)
   const [isUpdatingQuestion, setIsUpdatingQuestion] = useState(false)
+  const [isCustomQuestionDialogOpen, setIsCustomQuestionDialogOpen] = useState(false)
+  const [customQuestionCategory, setCustomQuestionCategory] = useState<QuestionCategory>('CLASSIC' as QuestionCategory)
+  const [customQuestionBadge, setCustomQuestionBadge] = useState<string>('none')
 
   // Ordenar las preguntas por orden
-  const sortedQuestions = [...gpQuestions].sort((a, b) => a.order - b.order)
+  const [sortedQuestions, setSortedQuestions] = useState(() => 
+    [...gpQuestions].sort((a, b) => a.order - b.order)
+  )
+  
+  // Configuración de sensores para drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
 
   // Agrupar preguntas por categoría
   const questionsByCategory = sortedQuestions.reduce((acc, gpQuestion) => {
@@ -120,6 +167,69 @@ export function GPQuestionsClient({
     CLASSIC: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
     PILOT_FOCUS: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
     STROLLOMETER: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200',
+  }
+
+  const questionTypeColors: Record<QuestionType, string> = {
+    DRIVERS: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+    TEAMS: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+    MULTIPLE_CHOICE: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
+    NUMERIC: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200',
+    BOOLEAN: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200',
+    HEAD_TO_HEAD: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
+  }
+
+  const questionTypeIcons: Record<QuestionType, React.ReactNode> = {
+    DRIVERS: <Users className="h-4 w-4" />,
+    TEAMS: <Flag className="h-4 w-4" />,
+    MULTIPLE_CHOICE: <HelpCircle className="h-4 w-4" />,
+    NUMERIC: <Hash className="h-4 w-4" />,
+    BOOLEAN: <Binary className="h-4 w-4" />,
+    HEAD_TO_HEAD: <GitCompare className="h-4 w-4" />,
+  }
+
+  const questionTypeLabels: Record<QuestionType, string> = {
+    DRIVERS: 'Pilotos',
+    TEAMS: 'Equipos',
+    MULTIPLE_CHOICE: 'Opción Múltiple',
+    NUMERIC: 'Numérico',
+    BOOLEAN: 'Sí/No',
+    HEAD_TO_HEAD: 'H2H',
+  }
+
+  // Helper para verificar si una pregunta tiene opciones válidas
+  const hasValidOptions = (gpQuestion: GPQuestion & { question: Question }) => {
+    const type = gpQuestion.type || gpQuestion.question.type
+    
+    // Solo verificar para tipos que requieren opciones
+    if (!['MULTIPLE_CHOICE', 'HEAD_TO_HEAD'].includes(type)) {
+      return true
+    }
+    
+    // Verificar si tiene opciones - primero en gpQuestion, luego en question
+    let options = gpQuestion.options
+    if (!options && gpQuestion.question) {
+      options = gpQuestion.question.options
+    }
+    
+    if (!options || typeof options !== 'object') {
+      return false
+    }
+    
+    const opts = options as { type?: string; values?: string[] | null }
+    
+    // Si es tipo 'custom' necesita values
+    if (opts.type === 'custom') {
+      if (!opts.values || !Array.isArray(opts.values)) {
+        return false
+      }
+      
+      // Debe tener al menos 2 opciones no vacías
+      const validOptions = opts.values.filter(v => v && typeof v === 'string' && v.trim() !== '')
+      return validOptions.length >= 2
+    }
+    
+    // Para otros tipos (drivers, teams, etc) está ok
+    return true
   }
 
   const addOption = () => {
@@ -196,32 +306,35 @@ export function GPQuestionsClient({
         setIsAddingQuestion(false)
       }
     } else {
-      // Crear pregunta de biblioteca normal
-      if (!selectedQuestionId || !customPoints) {
-        toast.error('Selecciona una pregunta y asigna puntos')
+      // Crear pregunta desde plantilla
+      if (!selectedTemplateId || !customPoints) {
+        toast.error('Selecciona una plantilla y asigna puntos')
         return
       }
 
       setIsAddingQuestion(true)
       try {
-        const result = await addQuestionToGPAction({
+        const result = await createQuestionFromTemplateAction(
+          selectedTemplateId,
           grandPrixId,
-          questionId: selectedQuestionId,
-          points: parseInt(customPoints),
-          order: sortedQuestions.length + 1,
-        })
+          {
+            points: parseInt(customPoints),
+            text: customText || undefined,
+          }
+        )
 
         if (result.success) {
-          toast.success('Pregunta agregada correctamente')
+          toast.success('Pregunta creada desde plantilla correctamente')
           setIsAddDialogOpen(false)
-          setSelectedQuestionId('')
+          setSelectedTemplateId('')
           setCustomPoints('')
+          setCustomText('')
           router.refresh()
         } else {
-          toast.error(result.error || 'Error al agregar la pregunta')
+          toast.error(result.error || 'Error al crear la pregunta')
         }
       } catch {
-        toast.error('Error al agregar la pregunta')
+        toast.error('Error al crear la pregunta')
       } finally {
         setIsAddingQuestion(false)
       }
@@ -277,16 +390,18 @@ export function GPQuestionsClient({
   const handleApplyStandardQuestions = async () => {
     setIsApplying(true)
     try {
-      const result = await applyStandardQuestionsAction(grandPrixId)
+      // Obtener todos los IDs de plantillas
+      const templateIds = templates.map(t => t.id)
+      const result = await applyMultipleTemplatesAction(grandPrixId, templateIds)
       
       if (result.success) {
-        toast.success(`${result.count} preguntas estándar aplicadas`)
+        toast.success(`${templateIds.length} plantillas aplicadas correctamente`)
         router.refresh()
       } else {
-        toast.error(result.error || 'Error al aplicar preguntas estándar')
+        toast.error(result.error || 'Error al aplicar plantillas')
       }
     } catch {
-      toast.error('Error al aplicar preguntas estándar')
+      toast.error('Error al aplicar plantillas')
     } finally {
       setIsApplying(false)
     }
@@ -304,13 +419,13 @@ export function GPQuestionsClient({
 
   const startEditingQuestion = (gpQuestion: GPQuestion & { question: Question }) => {
     setEditingGPQuestion(gpQuestion)
-    setEditQuestionText(gpQuestion.question.text)
-    setEditQuestionType(gpQuestion.question.type as QuestionType)
+    setEditQuestionText(gpQuestion.text || '')
+    setEditQuestionType(gpQuestion.type as QuestionType)
     setEditQuestionPoints(gpQuestion.points.toString())
     
     // Si la pregunta tiene opciones personalizadas, cargarlas
-    if (gpQuestion.question.options && typeof gpQuestion.question.options === 'object') {
-      const opts = gpQuestion.question.options as { type: string; values?: string[] }
+    if (gpQuestion.options && typeof gpQuestion.options === 'object') {
+      const opts = gpQuestion.options as { type: string; values?: string[] }
       if (opts.type === 'custom' && Array.isArray(opts.values)) {
         setEditQuestionOptions(opts.values)
       } else {
@@ -339,18 +454,30 @@ export function GPQuestionsClient({
         points: parseInt(editQuestionPoints),
       }
 
-      // Si es multiple choice, incluir las opciones
-      if (editQuestionType === 'MULTIPLE_CHOICE') {
-        const validOptions = editQuestionOptions.filter(opt => opt.trim() !== '')
-        if (validOptions.length < 2) {
-          toast.error('Debes proporcionar al menos 2 opciones para preguntas de opción múltiple')
-          return
-        }
-        updateData.options = { type: 'custom', values: validOptions }
-      } else if (editQuestionType === 'BOOLEAN') {
-        updateData.options = { type: 'boolean' }
-      } else {
-        updateData.options = { type: 'numeric' }
+      // Configurar opciones según el tipo de pregunta
+      switch (editQuestionType) {
+        case 'MULTIPLE_CHOICE':
+        case 'HEAD_TO_HEAD':
+          const validOptions = editQuestionOptions.filter(opt => opt.trim() !== '')
+          if (validOptions.length < 2) {
+            toast.error('Debes proporcionar al menos 2 opciones')
+            setIsUpdatingQuestion(false)
+            return
+          }
+          updateData.options = { type: 'custom', values: validOptions }
+          break
+        case 'NUMERIC':
+          updateData.options = { type: 'numeric' }
+          break
+        case 'DRIVERS':
+          updateData.options = { type: 'drivers' }
+          break
+        case 'TEAMS':
+          updateData.options = { type: 'teams' }
+          break
+        case 'BOOLEAN':
+          updateData.options = { type: 'custom', values: ['Sí', 'No'] }
+          break
       }
 
       const result = await updateGPQuestionAction(editingGPQuestion.id, updateData)
@@ -412,32 +539,81 @@ export function GPQuestionsClient({
     }
   }
 
-  // TODO: Implementar drag and drop para reordenar preguntas
-  // const handleReorder = async (fromIndex: number, toIndex: number) => {
-  //   // Crear nuevo array con el orden actualizado
-  //   const reorderedQuestions = [...sortedQuestions]
-  //   const [movedItem] = reorderedQuestions.splice(fromIndex, 1)
-  //   reorderedQuestions.splice(toIndex, 0, movedItem)
-
-  //   // Crear array con los nuevos órdenes
-  //   const questionOrders = reorderedQuestions.map((q, index) => ({
-  //     id: q.id,
-  //     order: index + 1,
-  //   }))
-
-  //   try {
-  //     const result = await reorderGPQuestionsAction(grandPrixId, questionOrders)
+  // Manejo del drag and drop
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+    
+    if (!over || active.id === over.id) {
+      return
+    }
+    
+    // Encontrar los índices
+    const oldIndex = sortedQuestions.findIndex((q) => q.id === active.id)
+    const newIndex = sortedQuestions.findIndex((q) => q.id === over.id)
+    
+    if (oldIndex === -1 || newIndex === -1) {
+      return
+    }
+    
+    // Actualizar el estado local inmediatamente para feedback visual
+    const newQuestions = arrayMove(sortedQuestions, oldIndex, newIndex)
+    setSortedQuestions(newQuestions)
+    
+    // Crear array con los nuevos órdenes
+    const questionOrders = newQuestions.map((q, index) => ({
+      id: q.id,
+      order: index + 1,
+    }))
+    
+    try {
+      const result = await reorderGPQuestionsAction(grandPrixId, questionOrders)
       
-  //     if (result.success) {
-  //       toast.success('Orden actualizado')
-  //       router.refresh()
-  //     } else {
-  //       toast.error('Error al reordenar las preguntas')
-  //     }
-  //   } catch {
-  //     toast.error('Error al reordenar las preguntas')
-  //   }
-  // }
+      if (result.success) {
+        toast.success('Orden actualizado')
+        router.refresh()
+      } else {
+        toast.error('Error al reordenar las preguntas')
+        // Revertir el cambio si falla
+        setSortedQuestions(sortedQuestions)
+      }
+    } catch {
+      toast.error('Error al reordenar las preguntas')
+      // Revertir el cambio si falla
+      setSortedQuestions(sortedQuestions)
+    }
+  }
+  
+  // Componente para fila arrastrable
+  function SortableRow({ gpQuestion, children }: { gpQuestion: typeof sortedQuestions[0], children: React.ReactNode }) {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id: gpQuestion.id })
+    
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+    }
+    
+    return (
+      <TableRow ref={setNodeRef} style={style}>
+        <TableCell>
+          <div className="flex items-center gap-1">
+            <div {...attributes} {...listeners}>
+              <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
+            </div>
+            <span className="font-medium">{gpQuestion.order}</span>
+          </div>
+        </TableCell>
+        {children}
+      </TableRow>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -447,20 +623,35 @@ export function GPQuestionsClient({
           {sortedQuestions.length} pregunta{sortedQuestions.length !== 1 ? 's' : ''} configurada{sortedQuestions.length !== 1 ? 's' : ''}
         </div>
         <div className="flex gap-2">
-          {availableQuestions.length > 0 && (
+          {templates.length > 0 && (
             <Button
               variant="outline"
               onClick={handleApplyStandardQuestions}
               disabled={isApplying}
             >
-              Aplicar todas las estándar
+              {isApplying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Aplicar todas las plantillas
             </Button>
           )}
+          <Button
+            variant="outline"
+            onClick={() => {
+              setIsCustomQuestionDialogOpen(true)
+              setNewQuestionText('')
+              setNewQuestionType('MULTIPLE_CHOICE' as QuestionType)
+              setNewQuestionOptions(['', ''])
+              setCustomPoints('10')
+              setCustomQuestionBadge('none')
+            }}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Crear Pregunta Personalizada
+          </Button>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
-                Agregar Pregunta
+                Agregar desde Plantilla
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -473,7 +664,7 @@ export function GPQuestionsClient({
                 <DialogDescription>
                   {isCreatingPilotQuestion
                     ? 'Crea una pregunta personalizada sobre el piloto en foco'
-                    : 'Selecciona una pregunta y asigna los puntos para este GP'}
+                    : 'Selecciona una plantilla y personaliza la pregunta para este GP'}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
@@ -490,16 +681,28 @@ export function GPQuestionsClient({
                     </div>
                     <div>
                       <Label htmlFor="questionType">Tipo de pregunta</Label>
-                      <select
-                        id="questionType"
-                        className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                      <input type="hidden" name="type" value={newQuestionType} />
+                      <Select 
                         value={newQuestionType}
-                        onChange={(e) => setNewQuestionType(e.target.value as QuestionType)}
+                        onValueChange={(value) => setNewQuestionType(value as QuestionType)}
                       >
-                        <option value="MULTIPLE_CHOICE">Opción múltiple</option>
-                        <option value="BOOLEAN">Sí/No</option>
-                        <option value="NUMERIC">Numérico</option>
-                      </select>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Selecciona el tipo de pregunta" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(['MULTIPLE_CHOICE', 'BOOLEAN', 'NUMERIC'] as QuestionType[]).map((type) => (
+                            <SelectItem key={type} value={type}>
+                              <Badge 
+                                variant="outline" 
+                                className={`flex items-center gap-1 w-fit ${questionTypeColors[type]}`}
+                              >
+                                {questionTypeIcons[type]}
+                                <span>{questionTypeLabels[type]}</span>
+                              </Badge>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     {newQuestionType === 'MULTIPLE_CHOICE' && (
                       <div>
@@ -543,28 +746,52 @@ export function GPQuestionsClient({
                     )}
                   </>
                 ) : (
-                  <div>
-                    <Label htmlFor="question">Pregunta</Label>
-                    <select
-                      id="question"
-                      className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
-                      value={selectedQuestionId}
-                      onChange={(e) => {
-                        setSelectedQuestionId(e.target.value)
-                        const question = availableQuestions.find(q => q.id === e.target.value)
-                        if (question) {
-                          setCustomPoints(question.defaultPoints.toString())
-                        }
-                      }}
-                    >
-                      <option value="">Selecciona una pregunta</option>
-                      {availableQuestions.map((question) => (
-                        <option key={question.id} value={question.id}>
-                          {question.text} (por defecto: {question.defaultPoints} pts)
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <>
+                    <div>
+                      <Label htmlFor="template">Plantilla</Label>
+                      <select
+                        id="template"
+                        className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+                        value={selectedTemplateId}
+                        onChange={(e) => {
+                          setSelectedTemplateId(e.target.value)
+                          const template = templates.find(t => t.id === e.target.value)
+                          if (template) {
+                            setCustomPoints(template.defaultPoints.toString())
+                            setCustomText(template.text)
+                          }
+                        }}
+                      >
+                        <option value="">Selecciona una plantilla</option>
+                        <optgroup label="Preguntas Clásicas">
+                          {templates.filter(t => t.category === 'CLASSIC').map((template) => (
+                            <option key={template.id} value={template.id}>
+                              {template.text} (por defecto: {template.defaultPoints} pts)
+                            </option>
+                          ))}
+                        </optgroup>
+                        <optgroup label="Strollómetro">
+                          {templates.filter(t => t.category === 'STROLLOMETER').map((template) => (
+                            <option key={template.id} value={template.id}>
+                              {template.text} (por defecto: {template.defaultPoints} pts)
+                            </option>
+                          ))}
+                        </optgroup>
+                      </select>
+                    </div>
+                    <div>
+                      <Label htmlFor="customText">Texto de la pregunta (opcional)</Label>
+                      <Input
+                        id="customText"
+                        value={customText}
+                        onChange={(e) => setCustomText(e.target.value)}
+                        placeholder="Deja vacío para usar el texto de la plantilla"
+                      />
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Puedes personalizar el texto de la pregunta para este GP específico
+                      </p>
+                    </div>
+                  </>
                 )}
                 <div>
                   <Label htmlFor="points">Puntos para este GP</Label>
@@ -583,7 +810,8 @@ export function GPQuestionsClient({
                     variant="outline"
                     onClick={() => {
                       setIsAddDialogOpen(false)
-                      setSelectedQuestionId('')
+                      setSelectedTemplateId('')
+                      setCustomText('')
                       setCustomPoints('')
                       setIsCreatingPilotQuestion(false)
                       setNewQuestionText('')
@@ -758,33 +986,69 @@ export function GPQuestionsClient({
                   </div>
                 ) : questions.length > 0 ? (
                 <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[50px]">Orden</TableHead>
-                        <TableHead>Pregunta</TableHead>
-                        <TableHead>Tipo</TableHead>
-                        <TableHead className="text-center">Puntos</TableHead>
-                        <TableHead className="text-center">Predicciones</TableHead>
-                        <TableHead className="w-[100px]"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {questions.map((gpQuestion) => (
-                        <TableRow key={gpQuestion.id}>
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[50px]">Orden</TableHead>
+                          <TableHead>Pregunta</TableHead>
+                          <TableHead>Tipo</TableHead>
+                          <TableHead className="text-center">Puntos</TableHead>
+                          <TableHead className="text-center">Predicciones</TableHead>
+                          <TableHead className="w-[100px]"></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        <SortableContext
+                          items={questions.map(q => q.id)}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          {questions.map((gpQuestion) => (
+                            <SortableRow key={gpQuestion.id} gpQuestion={gpQuestion}>
+                              <TableCell className="font-medium">
+                                {gpQuestion.question.text}
+                              </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-1">
-                              <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
-                              <span className="font-medium">{gpQuestion.order}</span>
+                            <div className="flex items-center gap-2">
+                              {(() => {
+                                const type = (gpQuestion.type || gpQuestion.question.type) as QuestionType
+                                const needsOptions = ['MULTIPLE_CHOICE', 'HEAD_TO_HEAD'].includes(type)
+                                const hasOptions = hasValidOptions(gpQuestion)
+                                
+                                return (
+                                  <div className="flex items-center gap-2">
+                                    <Badge 
+                                      variant="outline" 
+                                      className={`flex items-center gap-1 w-fit ${questionTypeColors[type]}`}
+                                    >
+                                      {questionTypeIcons[type]}
+                                      <span>{questionTypeLabels[type] || type}</span>
+                                    </Badge>
+                                    {needsOptions && !hasOptions && (
+                                      <div title="Esta pregunta requiere al menos 2 opciones">
+                                        <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                      </div>
+                                    )}
+                                  </div>
+                                )
+                              })()}
+                              {(gpQuestion.badge || gpQuestion.question.badge) && (() => {
+                                const badgeKey = (gpQuestion.badge || gpQuestion.question.badge) as keyof typeof QUESTION_BADGES
+                                const badgeData = QUESTION_BADGES[badgeKey]
+                                if (!badgeData) return null
+                                const Icon = badgeData.icon
+                                return (
+                                  <Badge className={`flex items-center gap-1 w-fit ${badgeData.color}`}>
+                                    <Icon className="h-3 w-3" />
+                                    <span>{badgeData.label}</span>
+                                  </Badge>
+                                )
+                              })()}
                             </div>
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {gpQuestion.question.text}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">
-                              {gpQuestion.question.type}
-                            </Badge>
                           </TableCell>
                           <TableCell className="text-center">
                             {editingId === gpQuestion.id ? (
@@ -829,20 +1093,18 @@ export function GPQuestionsClient({
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-1">
-                              {!gpQuestion.questionId && (
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={() => startEditingQuestion(gpQuestion)}
-                                  title="Editar pregunta"
-                                >
-                                  <Edit2 className="h-4 w-4" />
-                                </Button>
-                              )}
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                onClick={() => openDeleteDialog(gpQuestion, gpQuestion.question.text)}
+                                onClick={() => startEditingQuestion(gpQuestion)}
+                                title="Editar pregunta"
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => openDeleteDialog(gpQuestion, gpQuestion.text || '')}
                                 disabled={(gpQuestion._count?.predictions || 0) > 0}
                                 title="Eliminar pregunta"
                               >
@@ -850,10 +1112,12 @@ export function GPQuestionsClient({
                               </Button>
                             </div>
                           </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                            </SortableRow>
+                          ))}
+                        </SortableContext>
+                      </TableBody>
+                    </Table>
+                  </DndContext>
                 </div>
                 ) : null}
               </div>
@@ -867,7 +1131,8 @@ export function GPQuestionsClient({
           <p>• Haz clic en los puntos para editarlos</p>
           <p>• Las preguntas de Piloto en el Foco pueden ser editadas con el botón ✏️</p>
           <p>• Las preguntas con predicciones no pueden ser eliminadas</p>
-          <p>• Arrastra las preguntas para reordenarlas (próximamente)</p>
+          <p>• Las preguntas de Opción Múltiple o Head to Head requieren al menos 2 opciones ⚠️</p>
+          <p>• Arrastra las preguntas para reordenarlas</p>
         </div>
       )}
 
@@ -917,18 +1182,33 @@ export function GPQuestionsClient({
             </div>
             <div>
               <Label htmlFor="editQuestionType">Tipo de pregunta</Label>
-              <select
-                id="editQuestionType"
-                className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+              <input type="hidden" name="type" value={editQuestionType} />
+              <Select 
                 value={editQuestionType}
-                onChange={(e) => setEditQuestionType(e.target.value as QuestionType)}
+                onValueChange={(value) => setEditQuestionType(value as QuestionType)}
               >
-                <option value="MULTIPLE_CHOICE">Opción múltiple</option>
-                <option value="BOOLEAN">Sí/No</option>
-                <option value="NUMERIC">Numérico</option>
-              </select>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Selecciona el tipo de pregunta" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(questionTypeLabels).map(([value]) => {
+                    const type = value as QuestionType
+                    return (
+                      <SelectItem key={value} value={value}>
+                        <Badge 
+                          variant="outline" 
+                          className={`flex items-center gap-1 w-fit ${questionTypeColors[type]}`}
+                        >
+                          {questionTypeIcons[type]}
+                          <span>{questionTypeLabels[type]}</span>
+                        </Badge>
+                      </SelectItem>
+                    )
+                  })}
+                </SelectContent>
+              </Select>
             </div>
-            {editQuestionType === 'MULTIPLE_CHOICE' && (
+            {['MULTIPLE_CHOICE', 'HEAD_TO_HEAD'].includes(editQuestionType) && (
               <div>
                 <Label>Opciones de respuesta</Label>
                 <div className="space-y-2 mt-2">
@@ -997,6 +1277,259 @@ export function GPQuestionsClient({
               <Button onClick={handleUpdateQuestion} disabled={isUpdatingQuestion}>
                 {isUpdatingQuestion && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Guardar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo para crear pregunta personalizada */}
+      <Dialog open={isCustomQuestionDialogOpen} onOpenChange={setIsCustomQuestionDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Crear Pregunta Personalizada</DialogTitle>
+            <DialogDescription>
+              Crea una pregunta única para este Grand Prix sin usar plantillas
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="customQuestionText">Texto de la pregunta</Label>
+              <Input
+                id="customQuestionText"
+                value={newQuestionText}
+                onChange={(e) => setNewQuestionText(e.target.value)}
+                placeholder="ej: ¿Quién ganará la carrera?"
+              />
+            </div>
+            <div>
+              <Label htmlFor="customQuestionCategory">Categoría</Label>
+              <input type="hidden" name="category" value={customQuestionCategory} />
+              <Select 
+                value={customQuestionCategory}
+                onValueChange={(value) => setCustomQuestionCategory(value as QuestionCategory)}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Selecciona la categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(categoryLabels).map(([value, label]) => {
+                    const category = value as QuestionCategory
+                    return (
+                      <SelectItem key={value} value={value}>
+                        <Badge 
+                          variant="outline" 
+                          className={categoryColors[category]}
+                        >
+                          {label}
+                        </Badge>
+                      </SelectItem>
+                    )
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="customQuestionType">Tipo de pregunta</Label>
+              <input type="hidden" name="type" value={newQuestionType} />
+              <Select 
+                value={newQuestionType}
+                onValueChange={(value) => setNewQuestionType(value as QuestionType)}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Selecciona el tipo de pregunta" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(questionTypeLabels).map(([value]) => {
+                    const type = value as QuestionType
+                    return (
+                      <SelectItem key={value} value={value}>
+                        <Badge 
+                          variant="outline" 
+                          className={`flex items-center gap-1 w-fit ${questionTypeColors[type]}`}
+                        >
+                          {questionTypeIcons[type]}
+                          <span>{questionTypeLabels[type]}</span>
+                        </Badge>
+                      </SelectItem>
+                    )
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+            {getBadgesForType(newQuestionType).length > 0 && (
+              <div>
+                <Label htmlFor="customQuestionBadge">Badge (opcional)</Label>
+                <input type="hidden" name="badge" value={customQuestionBadge} />
+                <Select 
+                  value={customQuestionBadge}
+                  onValueChange={setCustomQuestionBadge}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Sin badge" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin badge</SelectItem>
+                    {getBadgesForType(newQuestionType).map((badge) => {
+                      const Icon = QUESTION_BADGES[badge].icon
+                      return (
+                        <SelectItem key={badge} value={badge}>
+                          <Badge className={`flex items-center gap-1 w-fit ${QUESTION_BADGES[badge].color}`}>
+                            <Icon className="h-3 w-3" />
+                            <span>{QUESTION_BADGES[badge].label}</span>
+                          </Badge>
+                        </SelectItem>
+                      )
+                    })}
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Los badges ayudan a identificar el propósito de la pregunta
+                </p>
+              </div>
+            )}
+            {['MULTIPLE_CHOICE', 'HEAD_TO_HEAD'].includes(newQuestionType) && (
+              <div>
+                <Label>Opciones de respuesta</Label>
+                <div className="space-y-2 mt-2">
+                  {newQuestionOptions.map((option, index) => (
+                    <div key={index} className="flex gap-2">
+                      <Input
+                        value={option}
+                        onChange={(e) => updateOption(index, e.target.value)}
+                        placeholder={`Opción ${index + 1}`}
+                      />
+                      {newQuestionOptions.length > 2 && (
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => removeOption(index)}
+                          className="h-9 w-9 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addOption}
+                    className="w-full"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Agregar opción
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Define al menos 2 opciones. Las opciones vacías serán ignoradas.
+                </p>
+              </div>
+            )}
+            <div>
+              <Label htmlFor="customQuestionPoints">Puntos</Label>
+              <Input
+                id="customQuestionPoints"
+                type="number"
+                min="1"
+                max="100"
+                value={customPoints}
+                onChange={(e) => setCustomPoints(e.target.value)}
+                placeholder="10"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsCustomQuestionDialogOpen(false)
+                  setNewQuestionText('')
+                  setNewQuestionType('MULTIPLE_CHOICE' as QuestionType)
+                  setNewQuestionOptions(['', ''])
+                  setCustomPoints('10')
+                  setCustomQuestionCategory('CLASSIC' as QuestionCategory)
+                  setCustomQuestionBadge('none')
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onClick={async () => {
+                  if (!newQuestionText.trim()) {
+                    toast.error('El texto de la pregunta no puede estar vacío')
+                    return
+                  }
+
+                  if (!customPoints || parseInt(customPoints) < 1) {
+                    toast.error('Los puntos deben ser al menos 1')
+                    return
+                  }
+
+                  setIsAddingQuestion(true)
+                  try {
+                    // Configurar opciones según el tipo de pregunta
+                    let options = undefined
+                    switch (newQuestionType) {
+                      case 'MULTIPLE_CHOICE':
+                      case 'HEAD_TO_HEAD':
+                        const validOptions = newQuestionOptions.filter(opt => opt.trim() !== '')
+                        if (validOptions.length < 2) {
+                          toast.error('Debes proporcionar al menos 2 opciones')
+                          setIsAddingQuestion(false)
+                          return
+                        }
+                        options = { type: 'custom', values: validOptions }
+                        break
+                      case 'NUMERIC':
+                        options = { type: 'numeric' }
+                        break
+                      case 'DRIVERS':
+                        options = { type: 'drivers' }
+                        break
+                      case 'TEAMS':
+                        options = { type: 'teams' }
+                        break
+                      case 'BOOLEAN':
+                        options = { type: 'custom', values: ['Sí', 'No'] }
+                        break
+                    }
+
+                    const result = await addQuestionToGPAction({
+                      grandPrixId,
+                      points: parseInt(customPoints),
+                      order: sortedQuestions.length + 1,
+                      text: newQuestionText,
+                      type: newQuestionType,
+                      category: customQuestionCategory,
+                      badge: customQuestionBadge !== 'none' ? customQuestionBadge : undefined,
+                      options,
+                    })
+
+                    if (result.success) {
+                      toast.success('Pregunta creada correctamente')
+                      setIsCustomQuestionDialogOpen(false)
+                      setNewQuestionText('')
+                      setNewQuestionType('MULTIPLE_CHOICE' as QuestionType)
+                      setNewQuestionOptions(['', ''])
+                      setCustomPoints('10')
+                      setCustomQuestionCategory('CLASSIC' as QuestionCategory)
+                      setCustomQuestionBadge('none')
+                      router.refresh()
+                    } else {
+                      toast.error(result.error || 'Error al crear la pregunta')
+                    }
+                  } catch {
+                    toast.error('Error al crear la pregunta')
+                  } finally {
+                    setIsAddingQuestion(false)
+                  }
+                }} 
+                disabled={isAddingQuestion}
+              >
+                {isAddingQuestion && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Crear Pregunta
               </Button>
             </div>
           </div>

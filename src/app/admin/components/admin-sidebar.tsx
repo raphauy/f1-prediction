@@ -2,7 +2,7 @@ import { getAllUsers } from "@/services/user-service"
 import { getAllWorkspaces } from "@/services/workspace-service"
 import { getAllSeasons } from "@/services/season-service"
 import { getAllGrandPrix } from "@/services/grand-prix-service"
-import { getAllQuestions } from "@/services/question-service"
+import { getAllQuestionTemplates } from "@/services/question-template-service"
 import { AdminSidebarClient } from "./admin-sidebar-client"
 
 interface AdminSidebarProps {
@@ -10,19 +10,19 @@ interface AdminSidebarProps {
 }
 
 export async function AdminSidebar({ children }: AdminSidebarProps) {
-  const [users, workspaces, seasons, grandPrix, questions] = await Promise.all([
+  const [users, workspaces, seasons, grandPrix, templates] = await Promise.all([
     getAllUsers(),
     getAllWorkspaces(),
     getAllSeasons(),
     getAllGrandPrix(),
-    getAllQuestions()
+    getAllQuestionTemplates()
   ])
   
   const userCount = users.length
   const workspaceCount = workspaces.length
   const seasonCount = seasons.length
   const grandPrixCount = grandPrix.length
-  const questionCount = questions.length
+  const templateCount = templates.length
 
   return (
     <AdminSidebarClient 
@@ -30,7 +30,7 @@ export async function AdminSidebar({ children }: AdminSidebarProps) {
       workspaceCount={workspaceCount}
       seasonCount={seasonCount}
       grandPrixCount={grandPrixCount}
-      questionCount={questionCount}
+      templateCount={templateCount}
     >
       {children}
     </AdminSidebarClient>

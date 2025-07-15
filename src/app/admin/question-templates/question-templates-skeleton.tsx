@@ -8,16 +8,17 @@ import {
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
 
-export function QuestionsSkeleton() {
+export function QuestionTemplatesSkeleton() {
   return (
     <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Pregunta</TableHead>
+            <TableHead>Plantilla</TableHead>
+            <TableHead>Categoría</TableHead>
             <TableHead>Tipo</TableHead>
             <TableHead className="text-center">Puntos por defecto</TableHead>
-            <TableHead className="text-center">Uso en GPs</TableHead>
+            <TableHead className="text-center">Veces usada</TableHead>
             <TableHead className="w-[50px]"></TableHead>
           </TableRow>
         </TableHeader>
@@ -26,6 +27,9 @@ export function QuestionsSkeleton() {
             <TableRow key={i}>
               <TableCell>
                 <Skeleton className="h-4 w-[300px]" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-6 w-[80px]" />
               </TableCell>
               <TableCell>
                 <Skeleton className="h-6 w-[120px]" />

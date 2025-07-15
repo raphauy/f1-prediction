@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { QuestionType, QuestionCategory } from '@prisma/client'
+import { createGPQuestionFromTemplate as createFromTemplate } from './question-template-service'
 
 // Schemas de validación
 export const createQuestionSchema = z.object({
@@ -8,6 +9,7 @@ export const createQuestionSchema = z.object({
   type: z.nativeEnum(QuestionType),
   category: z.nativeEnum(QuestionCategory),
   defaultPoints: z.number().int().min(1).max(100).default(10),
+  badge: z.string().optional(),
   options: z.any().optional(),
 })
 
@@ -20,8 +22,9 @@ export const createGPQuestionSchema = z.object({
   order: z.number().int().min(1).max(100),
   // Para preguntas inline
   text: z.string().min(1).max(500).optional(),
-  type: z.enum(['WINNER', 'PODIUM', 'POINTS_FINISH', 'FASTEST_LAP', 'POLE_POSITION', 'DNF', 'TEAM_WINNER', 'HEAD_TO_HEAD', 'MULTIPLE_CHOICE', 'NUMERIC', 'BOOLEAN']).optional(),
+  type: z.nativeEnum(QuestionType).optional(),
   category: z.enum(['CLASSIC', 'PILOT_FOCUS', 'STROLLOMETER']).optional(),
+  badge: z.string().optional(),
   options: z.any().optional(),
 })
 
@@ -29,7 +32,8 @@ export const updateGPQuestionSchema = z.object({
   points: z.number().int().min(1).max(100).optional(),
   order: z.number().int().min(1).max(100).optional(),
   text: z.string().min(1).max(500).optional(),
-  type: z.enum(['WINNER', 'PODIUM', 'POINTS_FINISH', 'FASTEST_LAP', 'POLE_POSITION', 'DNF', 'TEAM_WINNER', 'HEAD_TO_HEAD', 'MULTIPLE_CHOICE', 'NUMERIC', 'BOOLEAN']).optional(),
+  type: z.nativeEnum(QuestionType).optional(),
+  badge: z.string().optional(),
   options: z.any().optional(),
 })
 
@@ -168,6 +172,7 @@ export async function getGPQuestions(grandPrixId: string) {
     orderBy: { order: 'asc' },
     include: {
       question: true,
+      template: true,
       _count: {
         select: {
           predictions: true,
@@ -184,6 +189,7 @@ export async function getGPQuestions(grandPrixId: string) {
       text: gpq.text!,
       type: gpq.type!,
       category: gpq.category!,
+      badge: gpq.badge,
       defaultPoints: gpq.points,
       options: gpq.options,
       createdAt: gpq.createdAt,
@@ -440,3 +446,6 @@ export async function createPilotFocusQuestionsForGP(grandPrixId: string, pilotN
     data: gpQuestions,
   })
 }
+
+// Re-exportar la función de crear desde plantilla para facilitar el uso
+export const createGPQuestionFromTemplate = createFromTemplate

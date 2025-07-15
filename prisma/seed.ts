@@ -100,8 +100,15 @@ async function main() {
   console.log('F1 2025 Season created:', season2025)
 
   // Crear WorkspaceSeason para el workspace default
-  const workspaceSeason = await prisma.workspaceSeason.create({
-    data: {
+  const workspaceSeason = await prisma.workspaceSeason.upsert({
+    where: {
+      workspaceId_seasonId: {
+        workspaceId: workspace.id,
+        seasonId: season2025.id,
+      },
+    },
+    update: {},
+    create: {
       workspaceId: workspace.id,
       seasonId: season2025.id,
       isActive: true,
@@ -160,32 +167,36 @@ async function main() {
 
   console.log(`Created ${grandPrixList.length} Grand Prix for 2025 season`)
 
-  // Crear preguntas clásicas
-  const classicQuestions = [
+  // Crear plantillas de preguntas clásicas
+  const classicTemplates = [
     { 
       text: '¿Quién ganará la carrera?', 
-      type: QuestionType.WINNER, 
+      type: QuestionType.DRIVERS, 
+      badge: 'WINNER',
       category: QuestionCategory.CLASSIC,
       defaultPoints: 25,
       options: { type: 'drivers' }
     },
     { 
       text: '¿Quién conseguirá el segundo puesto?', 
-      type: QuestionType.PODIUM, 
+      type: QuestionType.DRIVERS, 
+      badge: 'PODIUM',
       category: QuestionCategory.CLASSIC,
       defaultPoints: 18,
       options: { type: 'drivers' }
     },
     { 
       text: '¿Quién conseguirá el tercer puesto?', 
-      type: QuestionType.PODIUM, 
+      type: QuestionType.DRIVERS, 
+      badge: 'PODIUM',
       category: QuestionCategory.CLASSIC,
       defaultPoints: 15,
       options: { type: 'drivers' }
     },
     { 
       text: '¿Quién terminará último en los puntos (P10)?', 
-      type: QuestionType.POINTS_FINISH, 
+      type: QuestionType.DRIVERS, 
+      badge: 'POINTS_FINISH',
       category: QuestionCategory.CLASSIC,
       defaultPoints: 10,
       options: { type: 'drivers' }
@@ -193,13 +204,15 @@ async function main() {
     { 
       text: '¿Cuántos abandonos habrá en la carrera?', 
       type: QuestionType.NUMERIC, 
+      badge: 'DNF',
       category: QuestionCategory.CLASSIC,
       defaultPoints: 8,
       options: { type: 'custom', values: ['0', '1', '2', '3', '4', '5', '6+'] }
     },
     { 
       text: '¿Quién hará la vuelta rápida?', 
-      type: QuestionType.FASTEST_LAP, 
+      type: QuestionType.DRIVERS, 
+      badge: 'FASTEST_LAP', 
       category: QuestionCategory.CLASSIC,
       defaultPoints: 5,
       options: { type: 'drivers' }
@@ -213,21 +226,24 @@ async function main() {
     },
     { 
       text: '¿Quién ganará más posiciones respecto a la clasificación?', 
-      type: QuestionType.MULTIPLE_CHOICE, 
+      type: QuestionType.DRIVERS, 
+      badge: 'POSITION_GAIN',
       category: QuestionCategory.CLASSIC,
       defaultPoints: 10,
       options: { type: 'drivers' }
     },
     { 
       text: '¿Quién perderá más posiciones respecto a la clasificación?', 
-      type: QuestionType.MULTIPLE_CHOICE, 
+      type: QuestionType.DRIVERS, 
+      badge: 'POSITION_LOSS',
       category: QuestionCategory.CLASSIC,
       defaultPoints: 10,
       options: { type: 'drivers' }
     },
     { 
       text: '¿Qué equipo hará el pit stop más rápido?', 
-      type: QuestionType.TEAM_WINNER, 
+      type: QuestionType.TEAMS, 
+      badge: 'FASTEST_PIT_STOP',
       category: QuestionCategory.CLASSIC,
       defaultPoints: 5,
       options: { type: 'teams' }
@@ -248,7 +264,8 @@ async function main() {
     },
     { 
       text: '¿Quién será el Driver of the Day?', 
-      type: QuestionType.MULTIPLE_CHOICE, 
+      type: QuestionType.DRIVERS, 
+      badge: 'DRIVER_OF_THE_DAY',
       category: QuestionCategory.CLASSIC,
       defaultPoints: 8,
       options: { type: 'drivers' }
@@ -270,6 +287,7 @@ async function main() {
     { 
       text: '¿Cuántos pilotos terminarán la carrera?', 
       type: QuestionType.NUMERIC, 
+      badge: 'DNF',
       category: QuestionCategory.CLASSIC,
       defaultPoints: 5,
       options: { type: 'custom', values: ['<16', '16', '17', '18', '19', '20'] }
@@ -290,22 +308,24 @@ async function main() {
     },
     { 
       text: '¿Qué equipo sumará más puntos en la carrera?', 
-      type: QuestionType.TEAM_WINNER, 
+      type: QuestionType.TEAMS, 
+      badge: 'TEAM_POINTS',
       category: QuestionCategory.CLASSIC,
       defaultPoints: 8,
       options: { type: 'teams' }
     },
     { 
       text: '¿Quién conseguirá la pole position?', 
-      type: QuestionType.POLE_POSITION, 
+      type: QuestionType.DRIVERS, 
+      badge: 'POLE_POSITION', 
       category: QuestionCategory.CLASSIC,
       defaultPoints: 10,
       options: { type: 'drivers' }
     }
   ]
 
-  // Crear preguntas del Strollómetro
-  const strollometerQuestions = [
+  // Crear plantillas del Strollómetro
+  const strollometerTemplates = [
     { 
       text: '¿Hasta qué ronda llegará Stroll en la clasificación?', 
       type: QuestionType.MULTIPLE_CHOICE, 
@@ -343,41 +363,38 @@ async function main() {
     }
   ]
 
-  const allQuestions = [...classicQuestions, ...strollometerQuestions]
+  const allTemplates: Array<{
+    text: string
+    type: QuestionType
+    category: QuestionCategory
+    defaultPoints: number
+    badge?: string
+    options: any
+  }> = [...classicTemplates, ...strollometerTemplates]
 
-  const questionList = []
-  for (const q of allQuestions) {
-    const question = await prisma.question.create({
+  // Crear plantillas en lugar de preguntas
+  const templateList = []
+  for (const t of allTemplates) {
+    const template = await prisma.questionTemplate.create({
       data: {
-        text: q.text,
-        type: q.type,
-        category: q.category,
-        defaultPoints: q.defaultPoints,
-        options: q.options,
+        text: t.text,
+        type: t.type,
+        category: t.category,
+        badge: t.badge || null,
+        defaultPoints: t.defaultPoints,
+        defaultOptions: t.options,
+        description: `Plantilla estándar para ${t.category === QuestionCategory.CLASSIC ? 'preguntas clásicas' : 'el Strollómetro'}`,
+        isActive: true,
       },
     })
-    questionList.push(question)
+    templateList.push(template)
   }
 
-  console.log(`Created ${questionList.length} standard questions`)
+  console.log(`Created ${templateList.length} question templates`)
 
-  // Asignar preguntas a cada Grand Prix
-  let gpQuestionCount = 0
-  for (const gp of grandPrixList) {
-    for (let i = 0; i < questionList.length; i++) {
-      await prisma.gPQuestion.create({
-        data: {
-          grandPrixId: gp.id,
-          questionId: questionList[i].id,
-          points: questionList[i].defaultPoints,
-          order: i + 1,
-        },
-      })
-      gpQuestionCount++
-    }
-  }
-
-  console.log(`Created ${gpQuestionCount} GP questions (${questionList.length} questions x ${grandPrixList.length} GPs)`)
+  // NO asignar automáticamente preguntas a los GP
+  // Los admins las aplicarán manualmente desde la interfaz
+  console.log('Templates created. Admins can now apply them to Grand Prix as needed.')
 
   // Crear SeasonStanding inicial para los usuarios existentes
   await prisma.seasonStanding.create({

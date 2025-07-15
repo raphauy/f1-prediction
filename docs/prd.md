@@ -63,14 +63,27 @@ El sistema de predicciones se estructura en **3 secciones temáticas** que ofrec
 - **Por qué importa**: Permite competencias anuales organizadas como el campeonato real de F1
 - **Cómo funciona**: Los usuarios se unen automáticamente a la temporada activa, pueden optar por DNF
 
-### 📋 **Configuración Flexible de Preguntas**
-- **Qué hace**: Sistema híbrido que combina preguntas fijas por sección con personalización específica por GP
-- **Por qué importa**: Mantiene estructura predecible mientras permite adaptación a narrativas actuales de F1
+### 📋 **Sistema de Plantillas de Preguntas**
+- **Qué hace**: Biblioteca de plantillas reutilizables para categorías estandarizables (Clásicas y Strollómetro) que los admins pueden usar como base
+- **Por qué importa**: Garantiza consistencia en preguntas recurrentes mientras permite personalización total sin afectar las plantillas originales
 - **Cómo funciona**: 
-  - **Preguntas Clásicas**: Biblioteca fija de preguntas template reutilizables en todos los GP
-  - **Piloto en el Foco**: Selección de piloto + preguntas contextuales personalizables por GP
-  - **Strollómetro**: Set consistente de preguntas sobre Stroll con opciones estándar
-  - Personalización sin afectar templates base del sistema
+  - **Biblioteca de Plantillas**: Conjunto predefinido de preguntas template para categorías "Clásicas" y "Strollómetro" únicamente
+  - **Proceso de Copia**: Los admins seleccionan plantillas y crean copias editables para cada GP
+  - **Independencia**: Las preguntas del GP son completamente independientes - modificar/personalizar no afecta las plantillas originales
+  - **Flexibilidad Total**: Texto, opciones, puntos y orden pueden modificarse libremente en las preguntas del GP
+  - **Reutilización**: Las plantillas permanecen disponibles para futuros GP, manteniendo estándares de calidad
+- **Scope**: Solo para preguntas recurrentes y estandarizables, NO para "Piloto en el Foco" que requiere creación contextual única
+
+### 📋 **Configuración Flexible de Preguntas por GP**
+- **Qué hace**: Sistema híbrido que combina plantillas para preguntas recurrentes con creación libre para contenido contextual
+- **Por qué importa**: Optimiza tiempo en preguntas estándar mientras maximiza creatividad en preguntas narrativas específicas
+- **Cómo funciona**: 
+  - **Preguntas Clásicas**: Admin selecciona plantillas estándar (pole, ganador, etc.) y puede personalizar texto/opciones según el circuito
+  - **Piloto en el Foco**: Creación completamente libre de preguntas contextuales adaptadas al piloto seleccionado y su situación actual
+  - **Strollómetro**: Plantillas consistentes sobre Stroll que pueden personalizarse manteniendo el humor característico
+  - **Flexibilidad por Categoría**: Plantillas para eficiencia vs. creación libre para narrativa única
+  - **Edición Sin Restricciones**: Preguntas copiadas de plantillas pueden modificarse completamente
+  - **Orden Personalizable**: Los admins definen el orden de presentación de preguntas por GP
 
 ### 📱 **Experiencia Mobile-First**
 - **Qué hace**: Interfaz responsive optimizada para hacer predicciones desde el móvil
@@ -81,6 +94,18 @@ El sistema de predicciones se estructura en **3 secciones temáticas** que ofrec
 - **Qué hace**: Bloquea predicciones automáticamente al inicio de la Qualy, con opción de extensión manual
 - **Por qué importa**: Mantiene la integridad del juego y evita predicciones post-facto
 - **Cómo funciona**: Sistema de fechas/horarios por GP con bloqueo automático de formularios
+
+### 🛠️ **Gestión de Plantillas de Preguntas**
+- **Qué hace**: Interfaz administrativa para gestionar biblioteca de plantillas (solo Clásicas y Strollómetro) y crear preguntas específicas por GP
+- **Por qué importa**: Optimiza el tiempo de configuración en preguntas recurrentes mientras permite creación libre para contenido contextual
+- **Cómo funciona**:
+  - **Biblioteca Central**: Admins globales mantienen colección curada de plantillas para categorías estandarizables
+  - **Exploración por Categorías**: Interfaz organizada por secciones "Clásicas" y "Strollómetro" únicamente
+  - **Vista Previa**: Los admins pueden previsualizar cómo se verá cada plantilla antes de copiarla
+  - **Copia Inteligente**: Un clic crea una instancia editable de la plantilla para el GP específico
+  - **Creación Libre**: Para "Piloto en el Foco" - editor completo para crear preguntas desde cero
+  - **Edición Sin Límites**: Texto, opciones, puntos y orden totalmente personalizables post-copia
+  - **Gestión de Versiones**: Las plantillas pueden evolucionar sin afectar preguntas de GP anteriores
 
 ### 👥 **Gestión Colaborativa de Workspaces**
 - **Qué hace**: Sistema de invitaciones, roles (admin/miembro), gestión de participantes por temporada
@@ -127,15 +152,24 @@ El sistema de predicciones se estructura en **3 secciones temáticas** que ofrec
 **Flujo de Configuración (Superadmin)**
 1. Accede a panel de admin del workspace
 2. Crea nuevo GP con fecha y hora de Qualy
-3. **Configura las 3 secciones de preguntas**:
-   - **Preguntas Clásicas**: Selecciona del set estándar (pole, ganador, etc.)
-   - **Piloto en el Foco**: Elige piloto destacado y configura preguntas contextuales
-   - **Strollómetro**: Confirma preguntas estándar sobre Stroll (pre-configuradas)
-4. Personaliza preguntas específicas del GP sin modificar templates
-5. Revisa distribución de puntos por sección
-6. Activa GP - notificaciones automáticas a miembros
-7. Post-carrera: ingresa resultados reales para las 3 secciones
-8. Sistema calcula y actualiza puntos automáticamente
+3. **Configura las 3 secciones (híbrido plantillas + creación libre)**:
+   - **Preguntas Clásicas**: 
+     * Explora biblioteca de plantillas clásicas (pole, ganador, podio, etc.)
+     * Selecciona plantillas relevantes y crea copias para el GP
+     * Personaliza texto, opciones y puntos según el circuito específico
+   - **Piloto en el Foco**: 
+     * Elige piloto destacado para este GP
+     * Crea preguntas completamente nuevas adaptadas al contexto actual del piloto
+     * Diseña preguntas narrativas únicas (performance, situación en campeonato, rivalidades, etc.)
+   - **Strollómetro**: 
+     * Revisa plantillas estándar de Stroll disponibles
+     * Copia y personaliza preguntas manteniendo el tono humorístico
+4. **Edita libremente las preguntas copiadas** sin afectar plantillas originales
+5. Ajusta orden de presentación y distribución de puntos por sección
+6. Previsualiza experiencia completa de predicción
+7. Activa GP - notificaciones automáticas a miembros
+8. Post-carrera: ingresa resultados reales para las 3 secciones
+9. Sistema calcula y actualiza puntos automáticamente
 
 **Flujo de Temporada (Workspace)**
 1. Superadmin recibe nueva temporada creada por admin global
@@ -174,13 +208,19 @@ El sistema de predicciones se estructura en **3 secciones temáticas** que ofrec
 - **focusPilot**: Piloto seleccionado para la sección "Piloto en el Foco" de este GP
 - **focusPilotContext**: Contexto/razón de la selección del piloto (texto libre)
 
-**Question (Biblioteca de Preguntas)**
-- id, text, type, points, isTemplate, category, options (JSON)
-- **Categorías**: "classic" (preguntas clásicas), "pilot_focus" (piloto en el foco), "strollometer" (strollómetro)
+**QuestionTemplate (Plantillas de Preguntas)**
+- id, text, type, defaultPoints, category, defaultOptions (JSON), description, isActive
+- **Categorías**: "classic" (preguntas clásicas), "strollometer" (strollómetro) - NO incluye "pilot_focus"
 - **Tipos**: "single_choice", "multiple_choice", "numeric", "boolean"
+- **Propósito**: Biblioteca master de plantillas reutilizables para preguntas estandarizables únicamente
 
-**GPQuestion (Preguntas por GP)**
-- id, grandPrixId, questionId, customText, customOptions (JSON), points, order
+**GPQuestion (Preguntas Instanciadas por GP)**
+- id, grandPrixId, templateId (referencia opcional), text, type, points, options (JSON), order, isActive
+- **Características**: 
+  - Copias independientes de las plantillas que pueden modificarse libremente
+  - templateId mantiene trazabilidad del origen pero no restricciones
+  - Campos completamente editables sin afectar la plantilla original
+  - Pueden crearse preguntas completamente nuevas sin plantilla base
 
 **Prediction (Predicciones)**
 - id, userId, grandPrixId, gpQuestionId, answer, points, isCorrect
@@ -219,6 +259,8 @@ El sistema de predicciones se estructura en **3 secciones temáticas** que ofrec
 - **Stats avanzadas**: Porcentaje de aciertos por tipo de pregunta, streaks
 - **Predicciones grupales**: Mini-leagues dentro de workspaces
 - **API pública**: Integración con datos reales de F1 (resultados automáticos)
+- **Plantillas Colaborativas**: Sistema para que workspaces compartan plantillas exitosas de categorías "Clásicas" y "Strollómetro"
+- **IA para Preguntas Contextuales**: Sugerencias automáticas de preguntas "Piloto en el Foco" basadas en contexto del GP y narrativas actuales
 
 ### 🎯 **Funcionalidades Futuras (V3+)**
 - **Integración F1 API**: Resultados automáticos desde fuentes oficiales

@@ -22,18 +22,18 @@ import {
 import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import type { Question } from '@prisma/client'
-import { deleteQuestionAction } from './actions'
+import type { QuestionTemplate } from '@prisma/client'
+import { deleteQuestionTemplateAction } from './actions'
 
-interface QuestionsActionsClientProps {
-  question: Question & {
+interface QuestionTemplatesActionsClientProps {
+  template: QuestionTemplate & {
     _count?: {
       gpQuestions?: number
     }
   }
 }
 
-export function QuestionsActionsClient({ question }: QuestionsActionsClientProps) {
+export function QuestionTemplatesActionsClient({ template }: QuestionTemplatesActionsClientProps) {
   const router = useRouter()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -41,23 +41,23 @@ export function QuestionsActionsClient({ question }: QuestionsActionsClientProps
   const handleDelete = async () => {
     setIsDeleting(true)
     try {
-      const result = await deleteQuestionAction(question.id)
+      const result = await deleteQuestionTemplateAction(template.id)
       
       if (result.success) {
-        toast.success('Pregunta eliminada correctamente')
+        toast.success('Plantilla eliminada correctamente')
         router.refresh()
       } else {
-        toast.error(result.error || 'Error al eliminar la pregunta')
+        toast.error(result.error || 'Error al eliminar la plantilla')
       }
     } catch {
-      toast.error('Error al eliminar la pregunta')
+      toast.error('Error al eliminar la plantilla')
     } finally {
       setIsDeleting(false)
       setShowDeleteDialog(false)
     }
   }
 
-  const canDelete = !question._count?.gpQuestions || question._count.gpQuestions === 0
+  const canDelete = !template._count?.gpQuestions || template._count.gpQuestions === 0
 
   return (
     <>
@@ -68,7 +68,7 @@ export function QuestionsActionsClient({ question }: QuestionsActionsClientProps
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => router.push(`/admin/questions/${question.id}/edit`)}>
+          <DropdownMenuItem onClick={() => router.push(`/admin/question-templates/${template.id}/edit`)}>
             <Pencil className="mr-2 h-4 w-4" />
             Editar
           </DropdownMenuItem>
@@ -89,10 +89,10 @@ export function QuestionsActionsClient({ question }: QuestionsActionsClientProps
           <AlertDialogHeader>
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. La pregunta &quot;{question.text}&quot; será eliminada permanentemente.
+              Esta acción no se puede deshacer. La plantilla &quot;{template.text}&quot; será eliminada permanentemente.
               {!canDelete && (
                 <span className="block mt-2 text-red-600 dark:text-red-400">
-                  Esta pregunta está siendo utilizada en {question._count?.gpQuestions} Grand Prix y no puede ser eliminada.
+                  Esta plantilla ha sido utilizada en {template._count?.gpQuestions} preguntas y se desactivará en lugar de eliminarse.
                 </span>
               )}
             </AlertDialogDescription>

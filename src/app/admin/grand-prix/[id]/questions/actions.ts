@@ -7,9 +7,11 @@ import {
   reorderGPQuestions,
   applyStandardQuestionsToGP,
   createPilotFocusQuestionsForGP,
+  createGPQuestionFromTemplate,
   type CreateGPQuestionData,
   type UpdateGPQuestionData,
 } from '@/services/question-service'
+import { applyTemplatesToGP } from '@/services/question-template-service'
 import { updateGrandPrix } from '@/services/grand-prix-service'
 import { revalidatePath } from 'next/cache'
 
@@ -109,6 +111,43 @@ export async function updateGrandPrixPilotAction(grandPrixId: string, focusPilot
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Error al actualizar el piloto',
+    }
+  }
+}
+
+export async function createQuestionFromTemplateAction(
+  templateId: string,
+  grandPrixId: string,
+  customData?: {
+    points?: number
+    text?: string
+    options?: unknown
+  }
+) {
+  try {
+    await createGPQuestionFromTemplate(templateId, grandPrixId, customData)
+    revalidatePath(`/admin/grand-prix/${grandPrixId}/questions`)
+    return { success: true }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error al crear pregunta desde plantilla',
+    }
+  }
+}
+
+export async function applyMultipleTemplatesAction(
+  grandPrixId: string,
+  templateIds: string[]
+) {
+  try {
+    await applyTemplatesToGP(grandPrixId, templateIds)
+    revalidatePath(`/admin/grand-prix/${grandPrixId}/questions`)
+    return { success: true }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error al aplicar plantillas',
     }
   }
 }

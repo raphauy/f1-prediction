@@ -189,6 +189,7 @@ model Question {
   type          QuestionType
   category      QuestionCategory
   defaultPoints Int              @default(10)
+  badge         String?          // Badge opcional: "WINNER", "PODIUM", etc.
   options       Json?            // Opciones predefinidas para la pregunta
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
@@ -200,10 +201,32 @@ model Question {
   @@map("questions")
 }
 
+model QuestionTemplate {
+  id            String           @id @default(cuid())
+  text          String           // Texto de la plantilla
+  type          QuestionType     // Tipo de pregunta
+  category      QuestionCategory // Solo CLASSIC o STROLLOMETER
+  defaultPoints Int              @default(10)
+  badge         String?          // Badge opcional: "WINNER", "PODIUM", etc.
+  defaultOptions Json?           // Opciones predeterminadas
+  description   String?          // Descripción de uso de la plantilla
+  isActive      Boolean          @default(true)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  
+  // Relaciones
+  gpQuestions   GPQuestion[]     // Preguntas creadas desde esta plantilla
+  
+  @@index([category])
+  @@index([isActive])
+  @@map("question_templates")
+}
+
 model GPQuestion {
   id            String           @id @default(cuid())
   grandPrixId   String
   questionId    String?          // Opcional para preguntas inline
+  templateId    String?          // Referencia opcional a la plantilla origen
   points        Int              // Puntos específicos para este GP
   order         Int              // Orden de aparición en el formulario
   
@@ -211,18 +234,21 @@ model GPQuestion {
   text          String?          // Texto de la pregunta inline
   type          QuestionType?    // Tipo de la pregunta inline
   category      QuestionCategory? // Categoría de la pregunta inline
+  badge         String?          // Badge opcional: "WINNER", "PODIUM", etc.
   options       Json?            // Opciones para la pregunta inline
   
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   
   // Relaciones
-  grandPrix     GrandPrix    @relation(fields: [grandPrixId], references: [id], onDelete: Cascade)
-  question      Question?    @relation(fields: [questionId], references: [id])
+  grandPrix     GrandPrix         @relation(fields: [grandPrixId], references: [id], onDelete: Cascade)
+  question      Question?         @relation(fields: [questionId], references: [id])
+  template      QuestionTemplate? @relation(fields: [templateId], references: [id])
   predictions   Prediction[]
   
   @@unique([grandPrixId, questionId])
   @@index([grandPrixId, category])
+  @@index([templateId])
   @@map("gp_questions")
 }
 
@@ -267,17 +293,12 @@ model SeasonStanding {
 
 // Enum para tipos de preguntas
 enum QuestionType {
-  WINNER        // Ganador de carrera
-  PODIUM        // Top 3
-  FASTEST_LAP   // Vuelta rápida
-  POLE_POSITION // Pole en clasificación
-  DNF           // Did Not Finish
-  POINTS_FINISH // Terminar en puntos
-  TEAM_WINNER   // Equipo ganador
-  MULTIPLE_CHOICE // Opción múltiple
-  NUMERIC       // Respuesta numérica
-  BOOLEAN       // Sí/No
-  HEAD_TO_HEAD  // Comparación entre pilotos
+  DRIVERS         // Selección de pilotos
+  TEAMS           // Selección de equipos
+  MULTIPLE_CHOICE // Opciones personalizadas
+  NUMERIC         // Respuesta numérica
+  BOOLEAN         // Sí/No
+  HEAD_TO_HEAD   // Comparación entre dos opciones
 }
 
 // Enum para categorías de preguntas
