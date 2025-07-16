@@ -91,10 +91,12 @@ export function InviteValid({ invitation, userState, session }: InviteValidProps
       if (result.success) {
         toast.success("¡Invitación aceptada! Bienvenido al workspace.")
         
-        // Verificar si necesita onboarding
-        if (userState.needsOnboarding) {
+        // Solo redirigir a onboarding si el usuario NO está onboarded
+        // (usuarios nuevos o que nunca completaron el onboarding)
+        if (userState.user && !userState.user.isOnboarded) {
           router.push(`/onboarding?workspace=${invitation.workspace.slug}`)
         } else {
+          // Usuario existente ya onboarded - ir directo al workspace
           router.push(`/w/${invitation.workspace.slug}`)
         }
       } else {
