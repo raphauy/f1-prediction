@@ -1,3 +1,5 @@
+"use client"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Activity, Trophy, Target, CheckCircle, UserPlus } from "lucide-react"
 import { format } from "date-fns"
