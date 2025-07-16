@@ -64,16 +64,16 @@ const questionTypeColors: Record<QuestionType, string> = {
 export function QuestionTemplatesTableClient({ templates }: QuestionTemplatesTableClientProps) {
   return (
     <div className="rounded-md border">
-      <Table>
+      <Table className="table-fixed">
         <TableHeader>
           <TableRow>
-            <TableHead>Plantilla</TableHead>
-            <TableHead>Categoría</TableHead>
-            <TableHead>Tipo</TableHead>
-            <TableHead>Badge</TableHead>
-            <TableHead className="text-center">Puntos por defecto</TableHead>
-            <TableHead className="text-center">Veces usada</TableHead>
-            <TableHead className="w-[50px]"></TableHead>
+            <TableHead className="w-[35%]">Plantilla</TableHead>
+            <TableHead className="w-[10%] px-2">Categoría</TableHead>
+            <TableHead className="w-[10%] px-2">Tipo</TableHead>
+            <TableHead className="w-[12%] px-2">Badge</TableHead>
+            <TableHead className="w-[10%] text-center px-2">Puntos</TableHead>
+            <TableHead className="w-[8%] text-center px-2">Usos</TableHead>
+            <TableHead className="w-[5%]"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -86,54 +86,54 @@ export function QuestionTemplatesTableClient({ templates }: QuestionTemplatesTab
           ) : (
             templates.map((template) => (
               <TableRow key={template.id}>
-                <TableCell className="font-medium">
+                <TableCell className="font-medium py-2">
                   <div>
-                    <p>{template.text}</p>
+                    <p className="line-clamp-1">{template.text}</p>
                     {template.description && (
-                      <p className="text-sm text-muted-foreground mt-1">{template.description}</p>
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{template.description}</p>
                     )}
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className="px-2 py-2">
                   <Badge 
                     variant="outline" 
-                    className={`${categoryColors[template.category]}`}
+                    className={`text-xs ${categoryColors[template.category]}`}
                   >
                     {categoryLabels[template.category]}
                   </Badge>
                 </TableCell>
-                <TableCell>
+                <TableCell className="px-2 py-2">
                   <Badge 
                     variant="outline" 
-                    className={`flex items-center gap-1 w-fit ${questionTypeColors[template.type]}`}
+                    className={`inline-flex items-center gap-1 text-xs ${questionTypeColors[template.type]}`}
                   >
                     {questionTypeIcons[template.type]}
-                    <span>{questionTypeLabels[template.type]}</span>
+                    <span className="hidden xl:inline">{questionTypeLabels[template.type]}</span>
                   </Badge>
                 </TableCell>
-                <TableCell>
+                <TableCell className="px-2 py-2">
                   {template.badge && QUESTION_BADGES[template.badge as keyof typeof QUESTION_BADGES] ? (() => {
                     const badgeData = QUESTION_BADGES[template.badge as keyof typeof QUESTION_BADGES]
                     const Icon = badgeData.icon
                     return (
-                      <Badge className={`flex items-center gap-1 w-fit ${badgeData.color}`}>
+                      <Badge className={`inline-flex items-center gap-1 text-xs ${badgeData.color}`}>
                         <Icon className="h-3 w-3" />
-                        <span>{badgeData.label}</span>
+                        <span className="hidden xl:inline">{badgeData.label}</span>
                       </Badge>
                     )
                   })() : (
                     <span className="text-muted-foreground">-</span>
                   )}
                 </TableCell>
-                <TableCell className="text-center">
-                  <Badge variant="secondary">
+                <TableCell className="text-center px-2 py-2">
+                  <Badge variant="secondary" className="text-xs">
                     {template.defaultPoints} pts
                   </Badge>
                 </TableCell>
-                <TableCell className="text-center">
+                <TableCell className="text-center px-2 py-2 text-sm">
                   {template._count?.gpQuestions || 0}
                 </TableCell>
-                <TableCell>
+                <TableCell className="py-2">
                   <QuestionTemplatesActionsClient template={template} />
                 </TableCell>
               </TableRow>
