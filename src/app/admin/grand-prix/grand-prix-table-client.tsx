@@ -57,8 +57,7 @@ export function GrandPrixTableClient({ grandPrix, seasons }: GrandPrixTableClien
           <TableHeader>
             <TableRow>
               <TableHead className="w-[50px]">Ronda</TableHead>
-              <TableHead>Grand Prix</TableHead>
-              <TableHead>Ubicación</TableHead>
+              <TableHead className="min-w-[250px]">Grand Prix</TableHead>
               <TableHead>Clasificación</TableHead>
               <TableHead>Carrera</TableHead>
               <TableHead>Estado</TableHead>
@@ -70,7 +69,7 @@ export function GrandPrixTableClient({ grandPrix, seasons }: GrandPrixTableClien
           <TableBody>
             {filteredGrandPrix.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center text-muted-foreground">
+                <TableCell colSpan={8} className="text-center text-muted-foreground">
                   No hay Grand Prix registrados
                 </TableCell>
               </TableRow>
@@ -83,15 +82,10 @@ export function GrandPrixTableClient({ grandPrix, seasons }: GrandPrixTableClien
                   <TableCell>
                     <div className="space-y-1">
                       <div className="font-medium">{gp.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {gp.season?.name}
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <MapPin className="h-3 w-3" />
+                        <span>{gp.location}, {gp.country}</span>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2 text-sm">
-                      <MapPin className="h-3 w-3" />
-                      <span>{gp.location}, {gp.country}</span>
                     </div>
                   </TableCell>
                   <TableCell>

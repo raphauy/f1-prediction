@@ -32,6 +32,7 @@ model User {
   // Relaciones F1
   predictions    Prediction[]
   seasonStandings SeasonStanding[]
+  officialResults OfficialResult[]
   
   @@map("users")
 }
@@ -178,6 +179,7 @@ model GrandPrix {
   season        Season       @relation(fields: [seasonId], references: [id], onDelete: Cascade)
   gpQuestions   GPQuestion[]
   predictions   Prediction[]
+  officialResults OfficialResult[]
   
   @@index([seasonId, round])
   @@map("grand_prix")
@@ -245,6 +247,7 @@ model GPQuestion {
   question      Question?         @relation(fields: [questionId], references: [id])
   template      QuestionTemplate? @relation(fields: [templateId], references: [id])
   predictions   Prediction[]
+  officialResult OfficialResult?   // Un GPQuestion puede tener un resultado oficial
   
   @@unique([grandPrixId, questionId])
   @@index([grandPrixId, category])
@@ -322,4 +325,26 @@ enum QuestionCategory {
   CLASSIC       // Preguntas clásicas
   PILOT_FOCUS   // Piloto en el foco
   STROLLOMETER  // Strollómetro
+}
+
+// ============================================
+// MODELO DE RESULTADOS OFICIALES
+// ============================================
+
+model OfficialResult {
+  id            String      @id @default(cuid())
+  grandPrixId   String
+  gpQuestionId  String      @unique
+  answer        String      // La respuesta correcta
+  createdById   String      // Admin que ingresó el resultado
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  // Relaciones
+  grandPrix     GrandPrix   @relation(fields: [grandPrixId], references: [id], onDelete: Cascade)
+  gpQuestion    GPQuestion  @relation(fields: [gpQuestionId], references: [id], onDelete: Cascade)
+  createdBy     User        @relation(fields: [createdById], references: [id])
+  
+  @@index([grandPrixId])
+  @@map("official_results")
 }

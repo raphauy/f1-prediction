@@ -127,6 +127,7 @@ export type GrandPrixWithDetails = GrandPrix & {
   _count?: {
     predictions?: number
     gpQuestions?: number
+    officialResults?: number
   }
   season?: {
     year: number
@@ -148,16 +149,16 @@ export async function getAllGrandPrix(seasonId?: string) {
   
   const grandPrix = await prisma.grandPrix.findMany({
     where,
-    orderBy: [
-      { season: { year: 'desc' } },
-      { round: 'asc' },
-    ],
+    orderBy: {
+      raceDate: 'asc'
+    },
     include: {
       season: true,
       _count: {
         select: {
           predictions: true,
           gpQuestions: true,
+          officialResults: true,
         },
       },
     },
@@ -182,6 +183,7 @@ export async function getGrandPrixById(id: string) {
         select: {
           predictions: true,
           gpQuestions: true,
+          officialResults: true,
         },
       },
     },
@@ -384,6 +386,7 @@ export async function updateGrandPrix(id: string, data: UpdateGrandPrixData) {
         select: {
           predictions: true,
           gpQuestions: true,
+          officialResults: true,
         },
       },
     },

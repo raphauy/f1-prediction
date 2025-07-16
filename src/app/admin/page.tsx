@@ -5,6 +5,8 @@ import { ExternalLink, Users, Building2, Mail, UserCheck, Shield, Plus } from "l
 import Link from "next/link"
 import { getAdminDashboardMetrics } from "@/services/dashboard-service"
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminDashboard() {
   const session = await auth()
   const metrics = await getAdminDashboardMetrics()

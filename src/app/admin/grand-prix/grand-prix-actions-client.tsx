@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-import { MoreHorizontal, Edit, Trash, HelpCircle, Eye } from 'lucide-react'
+import { MoreHorizontal, Edit, Trash, HelpCircle, Eye, Trophy } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -102,6 +102,12 @@ export function GrandPrixActionsClient({ grandPrix }: GrandPrixActionsClientProp
           <Link href={`/admin/grand-prix/${grandPrix.id}/questions`}>
             <HelpCircle className="mr-2 h-4 w-4" />
             Configurar preguntas
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href={`/admin/grand-prix/${grandPrix.id}/official-results`}>
+            <Trophy className="mr-2 h-4 w-4" />
+            Resultados oficiales
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />

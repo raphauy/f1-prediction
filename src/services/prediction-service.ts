@@ -155,7 +155,7 @@ export async function getActiveGPForPredictions(seasonId: string) {
       }
     },
     orderBy: {
-      round: 'asc'
+      qualifyingDate: 'asc' // Ordenar por fecha más próxima, no por ronda
     },
     include: {
       season: true,

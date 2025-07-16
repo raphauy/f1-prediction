@@ -6,6 +6,8 @@ import Link from "next/link"
 import { WorkspacesList } from "./workspaces-list"
 import { WorkspacesTableSkeleton } from "./workspaces-table-skeleton"
 
+export const dynamic = 'force-dynamic'
+
 export default function WorkspacesPage() {
   return (
     <div className="space-y-6">

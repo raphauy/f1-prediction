@@ -27,6 +27,7 @@ import {
   Trophy,
   Flag,
   HelpCircle,
+  Calculator,
 } from "lucide-react"
 // import Image from "next/image"
 
@@ -70,6 +71,12 @@ const adminNavItems = [
     href: "/admin/question-templates",
     icon: HelpCircle,
     badge: "templates",
+    disabled: false
+  },
+  {
+    title: "Puntuación",
+    href: "/admin/scoring",
+    icon: Calculator,
     disabled: false
   },
   {

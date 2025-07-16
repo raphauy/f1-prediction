@@ -134,3 +134,26 @@ export async function getLastGrandPrixWithResults(workspaceId: string): Promise<
     }
   })
 }
+
+/**
+ * Obtiene todas las temporadas activas de los workspaces
+ */
+export async function getActiveWorkspaceSeasons() {
+  return await prisma.workspaceSeason.findMany({
+    where: {
+      isActive: true,
+      season: {
+        isActive: true
+      }
+    },
+    include: {
+      workspace: true,
+      season: true,
+      _count: {
+        select: {
+          standings: true
+        }
+      }
+    }
+  })
+}

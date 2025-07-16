@@ -6,6 +6,8 @@ import Link from "next/link"
 import { UsersList } from "./users-list"
 import { UsersTableSkeleton } from "./users-table-skeleton"
 
+export const dynamic = 'force-dynamic'
+
 export default function UsersPage() {
   return (
     <div className="space-y-6">

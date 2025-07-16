@@ -1,7 +1,14 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { AlertCircle, Clock } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { getTimeUntilDeadline } from '@/lib/deadline-utils'
 import type { GrandPrixWithDetails } from '@/services/grand-prix-service'
+import { AlertCircle, Clock, Edit, Eye, MoreHorizontal } from 'lucide-react'
 import Link from 'next/link'
 
 interface UpcomingDeadlinesBannerProps {
@@ -41,12 +48,43 @@ export function UpcomingDeadlinesBanner({ grandPrix }: UpcomingDeadlinesBannerPr
                     - Cierra en {timeRemaining}
                   </span>
                 </div>
-                <Link 
-                  href={`/admin/grand-prix/${gp.id}/edit`}
-                  className="text-sm text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  Gestionar
-                </Link>
+                <div className="flex items-center gap-1">
+                  <Link 
+                    href={`/admin/grand-prix/${gp.id}/questions`}
+                    className="text-sm text-blue-600 hover:underline dark:text-blue-400"
+                  >
+                    Preguntas
+                  </Link>
+                  <span className="text-muted-foreground">·</span>
+                  <Link 
+                    href={`/admin/grand-prix/${gp.id}/official-results`}
+                    className="text-sm text-blue-600 hover:underline dark:text-blue-400"
+                  >
+                    Resultados
+                  </Link>
+                  <span className="text-muted-foreground">·</span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-6 px-2">
+                        <MoreHorizontal className="h-3 w-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem asChild>
+                        <Link href={`/admin/grand-prix/${gp.id}`}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          Ver detalles
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/admin/grand-prix/${gp.id}/edit`}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Editar
+                        </Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
             )
           })}

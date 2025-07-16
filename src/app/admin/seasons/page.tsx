@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button'
 import { SeasonsList } from './seasons-list'
 import { SeasonsTableSkeleton } from './seasons-skeleton'
 
+export const dynamic = 'force-dynamic'
+
 export default function SeasonsPage() {
   return (
     <div className="space-y-6">
