@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils'
 import { Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { QuestionInput } from './question-input'
+import { useMediaQuery } from '@/hooks/use-media-query'
 
 interface PredictionModalProps {
   isOpen: boolean
@@ -39,6 +40,8 @@ export function PredictionModal({
   isSaving,
   currentAnswer
 }: PredictionModalProps) {
+  const isMobile = useMediaQuery('(max-width: 640px)')
+  
   // Para preguntas booleanas, inicializar con "No" si no hay respuesta previa
   const getInitialAnswer = () => {
     if (currentAnswer) return currentAnswer
@@ -52,6 +55,7 @@ export function PredictionModal({
   useEffect(() => {
     setAnswer(getInitialAnswer())
     setError(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentAnswer, question])
 
   const handleSave = async () => {
@@ -77,26 +81,38 @@ export function PredictionModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader className="flex-shrink-0">
-          <DialogTitle>
+      <DialogContent 
+        className={cn(
+          "flex flex-col",
+          isMobile 
+            ? "max-w-none h-[100dvh] w-full rounded-none border-0" 
+            : "max-w-2xl max-h-[90vh] overflow-hidden"
+        )}
+      >
+        <DialogHeader className="flex-shrink-0 px-4 sm:px-6">
+          <DialogTitle className="text-lg sm:text-xl pr-8">
             {question.text}
           </DialogTitle>
-          <DialogDescription className="flex items-center justify-between">
-            <span>Valor: {question.points} puntos</span>
-            {question.badge && badgeInfo && (
-              <div className={cn(
-                "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium",
-                badgeInfo.color
-              )}>
-                {BadgeIcon && <BadgeIcon className="h-3 w-3" />}
-                <span>{badgeInfo.label}</span>
-              </div>
-            )}
+          <DialogDescription asChild>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm text-muted-foreground">
+              <span>Valor: {question.points} puntos</span>
+              {question.badge && badgeInfo && (
+                <div className={cn(
+                  "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium w-fit",
+                  badgeInfo.color
+                )}>
+                  {BadgeIcon && <BadgeIcon className="h-3 w-3" />}
+                  <span>{badgeInfo.label}</span>
+                </div>
+              )}
+            </div>
           </DialogDescription>
         </DialogHeader>
 
-        <div className="py-4 overflow-y-auto flex-1">
+        <div className={cn(
+          "flex-1",
+          isMobile ? "px-4 py-4 overflow-hidden" : "px-6 py-4 overflow-y-auto"
+        )}>
           <QuestionInput
             type={question.type || 'MULTIPLE_CHOICE'}
             options={question.options}
@@ -106,17 +122,24 @@ export function PredictionModal({
           />
         </div>
 
-        <DialogFooter className="flex-shrink-0">
+        <DialogFooter className={cn(
+          "flex-shrink-0 border-t pt-4",
+          isMobile ? "px-4 pb-6" : "px-6"
+        )}>
           <Button
             variant="outline"
             onClick={handleClose}
             disabled={isSaving}
+            size={isMobile ? "default" : "default"}
+            className={isMobile ? "flex-1" : ""}
           >
             Cancelar
           </Button>
           <Button
             onClick={handleSave}
             disabled={isSaving || !answer}
+            size={isMobile ? "default" : "default"}
+            className={isMobile ? "flex-1" : ""}
           >
             {isSaving ? (
               <>
