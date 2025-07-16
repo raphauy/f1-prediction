@@ -18,6 +18,7 @@ import { createGrandPrixAction, updateGrandPrixAction } from './actions'
 import { formatInTimeZone } from 'date-fns-tz'
 import { differenceInDays, parseISO } from 'date-fns'
 import type { GrandPrixWithDetails } from '@/services/grand-prix-service'
+import Link from 'next/link'
 
 // Lista de zonas horarias más comunes para F1
 const F1_TIMEZONES = [
@@ -363,7 +364,7 @@ export function GrandPrixForm({ grandPrix, seasons }: GrandPrixFormProps) {
       <div className="flex gap-4">
         <SubmitButton isEdit={!!grandPrix} />
         <Button type="button" variant="outline" asChild>
-          <a href="/admin/grand-prix">Cancelar</a>
+          <Link href="/admin/grand-prix">Cancelar</Link>
         </Button>
       </div>
     </form>

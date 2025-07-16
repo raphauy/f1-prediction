@@ -12,6 +12,11 @@ export async function WorkspaceList() {
 
   const userWorkspaces = await getUserWorkspaces(session.user.id)
 
+  // Si el usuario tiene un solo workspace, redirigir directamente a él
+  if (userWorkspaces.length === 1) {
+    redirect(`/w/${userWorkspaces[0].workspace.slug}`)
+  }
+
   if (userWorkspaces.length === 0) {
     return (
       <div className="text-center py-12">
