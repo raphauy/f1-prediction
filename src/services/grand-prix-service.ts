@@ -34,59 +34,61 @@ const grandPrixBaseSchema = z.object({
 })
 
 // Schema para creación con validaciones estrictas
-export const createGrandPrixSchema = grandPrixBaseSchema
-  .refine((data) => {
-    // Validar que la fecha de clasificación sea anterior a la de carrera
-    return data.qualifyingDate < data.raceDate
-  }, {
-    message: "La fecha de clasificación debe ser anterior a la fecha de carrera",
-    path: ["qualifyingDate"]
-  })
-  .refine((data) => {
-    // Validar que las fechas sean futuras (solo para creación)
-    const now = new Date()
-    return data.qualifyingDate > now
-  }, {
-    message: "La fecha de clasificación debe ser futura",
-    path: ["qualifyingDate"]
-  })
-  .refine((data) => {
-    // Validar diferencia entre clasificación y carrera
-    const diffDays = differenceInDays(data.raceDate, data.qualifyingDate)
-    
-    if (data.isSprint) {
-      // Para Sprint: normalmente 2 días (viernes clasificación, domingo carrera)
-      return diffDays >= 2 && diffDays <= 3
-    } else {
-      // Para carrera normal: normalmente 1 día (sábado clasificación, domingo carrera)
-      return diffDays >= 1 && diffDays <= 2
-    }
-  }, {
-    message: "La diferencia de días entre clasificación y carrera no es correcta",
-    path: ["qualifyingDate"]
-  })
-  .refine((data) => {
-    // Validar horarios típicos de F1 en hora local
-    const qualifyingLocalTime = toZonedTime(data.qualifyingDate, data.timezone)
-    const raceLocalTime = toZonedTime(data.raceDate, data.timezone)
-    
-    const qualifyingHour = getHours(qualifyingLocalTime)
-    const raceHour = getHours(raceLocalTime)
-    
-    // Clasificación típicamente entre 13:00 y 18:00 hora local
-    const qualifyingValid = qualifyingHour >= 13 && qualifyingHour <= 18
-    
-    // Carrera típicamente entre 12:00 y 16:00 hora local (excepto Las Vegas)
-    const isLasVegas = data.location.toLowerCase().includes('vegas')
-    const raceValid = isLasVegas 
-      ? (raceHour >= 20 || raceHour <= 2) // Las Vegas: carreras nocturnas
-      : (raceHour >= 12 && raceHour <= 16)
-    
-    return qualifyingValid && raceValid
-  }, {
-    message: "Los horarios no coinciden con los típicos de F1. Clasificación: 13:00-18:00, Carrera: 12:00-16:00 (hora local)",
-    path: ["qualifyingDate"]
-  })
+export const createGrandPrixSchema = process.env.DISABLE_GP_DATE_VALIDATION === 'true' 
+  ? grandPrixBaseSchema
+  : grandPrixBaseSchema
+    .refine((data) => {
+      // Validar que la fecha de clasificación sea anterior a la de carrera
+      return data.qualifyingDate < data.raceDate
+    }, {
+      message: "La fecha de clasificación debe ser anterior a la fecha de carrera",
+      path: ["qualifyingDate"]
+    })
+    .refine((data) => {
+      // Validar que las fechas sean futuras (solo para creación)
+      const now = new Date()
+      return data.qualifyingDate > now
+    }, {
+      message: "La fecha de clasificación debe ser futura",
+      path: ["qualifyingDate"]
+    })
+    .refine((data) => {
+      // Validar diferencia entre clasificación y carrera
+      const diffDays = differenceInDays(data.raceDate, data.qualifyingDate)
+      
+      if (data.isSprint) {
+        // Para Sprint: normalmente 2 días (viernes clasificación, domingo carrera)
+        return diffDays >= 2 && diffDays <= 3
+      } else {
+        // Para carrera normal: normalmente 1 día (sábado clasificación, domingo carrera)
+        return diffDays >= 1 && diffDays <= 2
+      }
+    }, {
+      message: "La diferencia de días entre clasificación y carrera no es correcta",
+      path: ["qualifyingDate"]
+    })
+    .refine((data) => {
+      // Validar horarios típicos de F1 en hora local
+      const qualifyingLocalTime = toZonedTime(data.qualifyingDate, data.timezone)
+      const raceLocalTime = toZonedTime(data.raceDate, data.timezone)
+      
+      const qualifyingHour = getHours(qualifyingLocalTime)
+      const raceHour = getHours(raceLocalTime)
+      
+      // Clasificación típicamente entre 13:00 y 18:00 hora local
+      const qualifyingValid = qualifyingHour >= 13 && qualifyingHour <= 18
+      
+      // Carrera típicamente entre 12:00 y 16:00 hora local (excepto Las Vegas)
+      const isLasVegas = data.location.toLowerCase().includes('vegas')
+      const raceValid = isLasVegas 
+        ? (raceHour >= 20 || raceHour <= 2) // Las Vegas: carreras nocturnas
+        : (raceHour >= 12 && raceHour <= 16)
+      
+      return qualifyingValid && raceValid
+    }, {
+      message: "Los horarios no coinciden con los típicos de F1. Clasificación: 13:00-18:00, Carrera: 12:00-16:00 (hora local)",
+      path: ["qualifyingDate"]
+    })
 
 // Schema para actualización con validaciones más flexibles
 export const updateGrandPrixSchema = grandPrixBaseSchema
@@ -246,22 +248,24 @@ export async function createGrandPrix(data: CreateGrandPrixData) {
   }
   
   // Verificar solapamiento con otros GPs (mínimo 5 días entre carreras)
-  const nearbyGPs = await prisma.grandPrix.findMany({
-    where: {
-      seasonId: validated.seasonId,
-      raceDate: {
-        gte: addDays(validated.raceDate, -5),
-        lte: addDays(validated.raceDate, 5),
+  if (process.env.DISABLE_GP_DATE_VALIDATION !== 'true') {
+    const nearbyGPs = await prisma.grandPrix.findMany({
+      where: {
+        seasonId: validated.seasonId,
+        raceDate: {
+          gte: addDays(validated.raceDate, -5),
+          lte: addDays(validated.raceDate, 5),
+        },
       },
-    },
-  })
-  
-  if (nearbyGPs.length > 0) {
-    const conflictingGP = nearbyGPs[0]
-    throw new Error(
-      `El Grand Prix está muy cerca de "${conflictingGP.name}" (${conflictingGP.raceDate.toLocaleDateString()}). ` +
-      `Debe haber al menos 5 días entre carreras.`
-    )
+    })
+    
+    if (nearbyGPs.length > 0) {
+      const conflictingGP = nearbyGPs[0]
+      throw new Error(
+        `El Grand Prix está muy cerca de "${conflictingGP.name}" (${conflictingGP.raceDate.toLocaleDateString()}). ` +
+        `Debe haber al menos 5 días entre carreras.`
+      )
+    }
   }
   
   // Crear el Grand Prix
@@ -357,23 +361,25 @@ export async function updateGrandPrix(id: string, data: UpdateGrandPrixData) {
     }
     
     // Verificar solapamiento con otros GPs
-    const nearbyGPs = await prisma.grandPrix.findMany({
-      where: {
-        seasonId: currentGP.seasonId,
-        raceDate: {
-          gte: addDays(validated.raceDate, -5),
-          lte: addDays(validated.raceDate, 5),
+    if (process.env.DISABLE_GP_DATE_VALIDATION !== 'true') {
+      const nearbyGPs = await prisma.grandPrix.findMany({
+        where: {
+          seasonId: currentGP.seasonId,
+          raceDate: {
+            gte: addDays(validated.raceDate, -5),
+            lte: addDays(validated.raceDate, 5),
+          },
+          NOT: { id },
         },
-        NOT: { id },
-      },
-    })
-    
-    if (nearbyGPs.length > 0) {
-      const conflictingGP = nearbyGPs[0]
-      throw new Error(
-        `El Grand Prix está muy cerca de "${conflictingGP.name}" (${conflictingGP.raceDate.toLocaleDateString()}). ` +
-        `Debe haber al menos 5 días entre carreras.`
-      )
+      })
+      
+      if (nearbyGPs.length > 0) {
+        const conflictingGP = nearbyGPs[0]
+        throw new Error(
+          `El Grand Prix está muy cerca de "${conflictingGP.name}" (${conflictingGP.raceDate.toLocaleDateString()}). ` +
+          `Debe haber al menos 5 días entre carreras.`
+        )
+      }
     }
   }
   

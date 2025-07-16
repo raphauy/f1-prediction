@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 800
 
 function ResultsTableSkeleton() {
   return (

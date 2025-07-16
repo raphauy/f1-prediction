@@ -5,6 +5,7 @@ import { ScoringDashboard } from "./scoring-dashboard"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 800
 
 function ScoringDashboardSkeleton() {
   return (

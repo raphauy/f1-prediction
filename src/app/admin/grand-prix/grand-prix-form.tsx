@@ -95,56 +95,59 @@ export function GrandPrixForm({ grandPrix, seasons }: GrandPrixFormProps) {
   useEffect(() => {
     const warnings: string[] = []
     
-    if (qualifyingDate && raceDate) {
-      const qDate = parseISO(qualifyingDate)
-      const rDate = parseISO(raceDate)
-      
-      // Validar orden de fechas
-      if (qDate >= rDate) {
-        warnings.push('La clasificación debe ser antes que la carrera')
-      } else {
-        // Validar diferencia de días
-        const daysDiff = differenceInDays(rDate, qDate)
+    // Solo mostrar advertencias si no está deshabilitada la validación
+    if (process.env.NEXT_PUBLIC_DISABLE_GP_DATE_VALIDATION !== 'true') {
+      if (qualifyingDate && raceDate) {
+        const qDate = parseISO(qualifyingDate)
+        const rDate = parseISO(raceDate)
         
-        if (isSprint) {
-          if (daysDiff < 2 || daysDiff > 3) {
-            warnings.push('Para Sprint: debe haber 2-3 días entre clasificación y carrera')
+        // Validar orden de fechas
+        if (qDate >= rDate) {
+          warnings.push('La clasificación debe ser antes que la carrera')
+        } else {
+          // Validar diferencia de días
+          const daysDiff = differenceInDays(rDate, qDate)
+          
+          if (isSprint) {
+            if (daysDiff < 2 || daysDiff > 3) {
+              warnings.push('Para Sprint: debe haber 2-3 días entre clasificación y carrera')
+            }
+          } else {
+            if (daysDiff < 1 || daysDiff > 2) {
+              warnings.push('Para carrera normal: debe haber 1-2 días entre clasificación y carrera')
+            }
+          }
+        }
+        
+        // Validar fechas futuras (solo para creación)
+        if (!grandPrix) {
+          const now = new Date()
+          if (qDate <= now) {
+            warnings.push('La fecha de clasificación debe ser futura')
+          }
+        }
+      }
+      
+      // Validar horarios típicos
+      if (qualifyingTime) {
+        const hour = parseInt(qualifyingTime.split(':')[0])
+        if (hour < 13 || hour > 18) {
+          warnings.push('Horario de clasificación atípico (normalmente 13:00-18:00)')
+        }
+      }
+      
+      if (raceTime) {
+        const hour = parseInt(raceTime.split(':')[0])
+        const isLasVegas = selectedTimezone === 'America/Los_Angeles'
+        
+        if (isLasVegas) {
+          if (hour >= 6 && hour <= 19) {
+            warnings.push('Las Vegas tiene carreras nocturnas (20:00-02:00)')
           }
         } else {
-          if (daysDiff < 1 || daysDiff > 2) {
-            warnings.push('Para carrera normal: debe haber 1-2 días entre clasificación y carrera')
+          if (hour < 12 || hour > 16) {
+            warnings.push('Horario de carrera atípico (normalmente 12:00-16:00)')
           }
-        }
-      }
-      
-      // Validar fechas futuras (solo para creación)
-      if (!grandPrix) {
-        const now = new Date()
-        if (qDate <= now) {
-          warnings.push('La fecha de clasificación debe ser futura')
-        }
-      }
-    }
-    
-    // Validar horarios típicos
-    if (qualifyingTime) {
-      const hour = parseInt(qualifyingTime.split(':')[0])
-      if (hour < 13 || hour > 18) {
-        warnings.push('Horario de clasificación atípico (normalmente 13:00-18:00)')
-      }
-    }
-    
-    if (raceTime) {
-      const hour = parseInt(raceTime.split(':')[0])
-      const isLasVegas = selectedTimezone === 'America/Los_Angeles'
-      
-      if (isLasVegas) {
-        if (hour >= 6 && hour <= 19) {
-          warnings.push('Las Vegas tiene carreras nocturnas (20:00-02:00)')
-        }
-      } else {
-        if (hour < 12 || hour > 16) {
-          warnings.push('Horario de carrera atípico (normalmente 12:00-16:00)')
         }
       }
     }

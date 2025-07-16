@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Loader2, Play, Users } from 'lucide-react'
+import { Loader2, Play, Users, Zap } from 'lucide-react'
 import { toast } from 'sonner'
-import { processGrandPrixAction, getScoringStatusAction } from './actions'
+import { processGrandPrixAction, getScoringStatusAction, processAllWorkspacesAction, getGlobalScoringStatusAction } from './actions'
 
 interface WorkspaceSeason {
   id: string
@@ -52,6 +52,19 @@ export function ScoringDashboardClient({ workspaceSeasons }: ScoringDashboardCli
   } | null>(null)
   const [isLoadingStatus, setIsLoadingStatus] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [globalStatus, setGlobalStatus] = useState<{
+    totalWorkspaces: number
+    grandPrixReadyToProcess: Array<{
+      id: string
+      name: string
+      round: number
+      totalQuestions: number
+      totalResults: number
+      workspacesReady: Array<{ id: string; name: string }>
+    }>
+  } | null>(null)
+  const [isLoadingGlobal, setIsLoadingGlobal] = useState(false)
+  const [isProcessingAll, setIsProcessingAll] = useState(false)
 
   const loadScoringStatus = async (workspaceSeasonId: string) => {
     setIsLoadingStatus(true)
@@ -84,8 +97,104 @@ export function ScoringDashboardClient({ workspaceSeasons }: ScoringDashboardCli
     }
   }
 
+  const loadGlobalStatus = async () => {
+    setIsLoadingGlobal(true)
+    try {
+      const status = await getGlobalScoringStatusAction()
+      setGlobalStatus(status)
+    } catch {
+      toast.error('Error al cargar el estado global')
+    } finally {
+      setIsLoadingGlobal(false)
+    }
+  }
+
+  const processAllWorkspaces = async (grandPrixId: string) => {
+    setIsProcessingAll(true)
+    try {
+      // NOTA: Si tienes muchos workspaces/usuarios, considera:
+      // 1. Aumentar maxDuration en page.tsx según tu plan de Vercel
+      // 2. Implementar procesamiento en lotes o cola de trabajos
+      const result = await processAllWorkspacesAction(grandPrixId)
+      toast.success(
+        `Procesamiento completo: ${result.workspacesProcessed} workspaces, ${result.totalProcessedUsers} usuarios, ${result.totalPointsAwarded} puntos totales`
+      )
+      // Recargar estados
+      await loadGlobalStatus()
+      if (selectedWorkspace) {
+        await loadScoringStatus(selectedWorkspace)
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Error al procesar todos los workspaces')
+    } finally {
+      setIsProcessingAll(false)
+    }
+  }
+
+  // Cargar estado global al montar
+  useEffect(() => {
+    loadGlobalStatus()
+  }, [])
+
   return (
     <div className="space-y-6">
+      {/* Estado Global */}
+      {globalStatus && globalStatus.grandPrixReadyToProcess.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Zap className="h-5 w-5" />
+              Procesamiento Global
+            </CardTitle>
+            <CardDescription>
+              Grand Prix listos para procesar en todos los workspaces
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingGlobal ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {globalStatus.grandPrixReadyToProcess.map((gp) => (
+                  <div
+                    key={gp.id}
+                    className="flex items-center justify-between p-4 rounded-lg border bg-muted/50"
+                  >
+                    <div>
+                      <div className="font-medium">
+                        Ronda {gp.round}: {gp.name}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {gp.workspacesReady.length} workspaces listos • {gp.totalQuestions} preguntas con resultados
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => processAllWorkspaces(gp.id)}
+                      disabled={isProcessingAll}
+                      variant="default"
+                    >
+                      {isProcessingAll ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Procesando...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="mr-2 h-4 w-4" />
+                          Procesar Todos
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Selector de Workspace */}
       <Card>
         <CardHeader>

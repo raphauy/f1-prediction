@@ -12,6 +12,7 @@ export type ProcessGrandPrixResultsData = z.infer<typeof processGrandPrixResults
 // Interfaz para el resultado del cálculo
 interface ScoringResult {
   userId: string
+  userName: string
   totalPoints: number
   correctPredictions: number
   totalPredictions: number
@@ -72,8 +73,12 @@ export async function processGrandPrixResults(
   const results: ScoringResult[] = []
   
   for (const [userId, userPredictions] of predictionsByUser) {
+    // Obtener el nombre del usuario de la primera predicción
+    const userName = userPredictions[0]?.user?.name || 'Usuario sin nombre'
+    
     const scoringResult: ScoringResult = {
       userId,
+      userName,
       totalPoints: 0,
       correctPredictions: 0,
       totalPredictions: userPredictions.length,
