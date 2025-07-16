@@ -60,7 +60,7 @@ export function WorkspaceNavClient({
       icon: Trophy,
       isActive: pathname === `/w/${workspaceSlug}/standings`,
       showForMembers: true,
-      disabled: true,
+      disabled: false,
     },
     {
       label: "Calendario",
