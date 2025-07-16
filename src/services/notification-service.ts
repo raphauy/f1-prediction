@@ -400,7 +400,7 @@ export function generateGPLaunchedEmailPreview(grandPrix: GPPreviewData, workspa
       circuit: grandPrix.circuit,
       raceDate: grandPrix.raceDate,
       qualifyingDate: grandPrix.qualifyingDate,
-      predictUrl: `${process.env.NEXTAUTH_URL}/w/${workspace.slug}/predict/${grandPrix.id}`,
+      predictUrl: `${process.env.NEXTAUTH_URL}/w/${workspace.slug}/predictions/${grandPrix.id}`,
       workspaceName: workspace.name
     })
   }

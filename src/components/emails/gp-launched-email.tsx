@@ -35,7 +35,7 @@ export default function GPLaunchedEmail({
   circuit = "Albert Park",
   raceDate = new Date('2025-03-16T06:00:00Z'),
   qualifyingDate = new Date('2025-03-15T06:00:00Z'),
-  predictUrl = "https://ejemplo.com/w/workspace/predict/gp123",
+  predictUrl = "https://ejemplo.com/w/workspace/predictions/gp123",
   workspaceName = "Mi Liga F1"
 }: GPLaunchedEmailProps) {
   const formattedRaceDate = format(raceDate, "d 'de' MMMM 'a las' HH:mm", { locale: es })
