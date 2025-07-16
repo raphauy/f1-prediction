@@ -7,8 +7,7 @@ import {
   getLastGrandPrixWithResults 
 } from "@/services/workspace-season-service"
 import {
-  getUserPredictionsForGP,
-  hasUserPredictedForGP
+  getUserPredictionsForGP
 } from "@/services/prediction-service"
 import {
   getWorkspaceStandings,
@@ -48,13 +47,16 @@ export async function getDashboardData(slug: string) {
     await getOrCreateUserStanding(activeSeason.id, session.user.id)
   }
 
-  // Verificar si el usuario ya predijo para el próximo GP
-  let hasUserPredicted = false
+  // Obtener información de predicciones del usuario para el próximo GP
+  let userPredictionInfo = { hasUserPredicted: false, predictionCount: 0, totalQuestions: 0 }
   if (nextGP) {
-    hasUserPredicted = await hasUserPredictedForGP(
-      session.user.id,
-      nextGP.id
-    )
+    const predictions = await getUserPredictionsForGP(session.user.id, nextGP.id)
+    const totalQuestions = nextGP._count?.gpQuestions || 0
+    userPredictionInfo = {
+      hasUserPredicted: predictions.length > 0,
+      predictionCount: predictions.length,
+      totalQuestions: totalQuestions
+    }
   }
 
   return {
@@ -63,7 +65,8 @@ export async function getDashboardData(slug: string) {
     lastGP,
     topStandings,
     userPosition,
-    hasUserPredicted,
+    hasUserPredicted: userPredictionInfo.hasUserPredicted,
+    userPredictionInfo,
     stats
   }
 }

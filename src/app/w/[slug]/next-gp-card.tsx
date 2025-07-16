@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Clock, Flag } from "lucide-react"
+import { Clock, Flag, CheckCircle } from "lucide-react"
 import { useEffect, useState } from "react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -21,10 +21,15 @@ interface NextGPCardProps {
     isSprint: boolean
   } | null
   hasUserPredicted: boolean
+  userPredictionInfo?: {
+    hasUserPredicted: boolean
+    predictionCount: number
+    totalQuestions: number
+  }
   workspaceSlug: string
 }
 
-export function NextGPCard({ grandPrix, hasUserPredicted, workspaceSlug }: NextGPCardProps) {
+export function NextGPCard({ grandPrix, hasUserPredicted, userPredictionInfo, workspaceSlug }: NextGPCardProps) {
   const [timeLeft, setTimeLeft] = useState<string>("")
 
   useEffect(() => {
@@ -111,11 +116,31 @@ export function NextGPCard({ grandPrix, hasUserPredicted, workspaceSlug }: NextG
               </div>
             </div>
             {hasUserPredicted ? (
-              <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 px-4 py-2">
-                ✓ Ya predijiste
-              </Badge>
+              <div className="flex items-center gap-2">
+                {userPredictionInfo && userPredictionInfo.predictionCount === userPredictionInfo.totalQuestions ? (
+                  <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 px-4 py-2 flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4" />
+                    <span className="font-medium">
+                      Predicciones: {userPredictionInfo.predictionCount}/{userPredictionInfo.totalQuestions}
+                    </span>
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100 px-4 py-2">
+                    <span className="font-medium">
+                      Predicciones: {userPredictionInfo?.predictionCount || 0}/{userPredictionInfo?.totalQuestions || 0}
+                    </span>
+                  </Badge>
+                )}
+                {userPredictionInfo && userPredictionInfo.predictionCount < userPredictionInfo.totalQuestions && (
+                  <Button asChild size="sm" variant="outline">
+                    <Link href={`/w/${workspaceSlug}/predictions`}>
+                      Completar
+                    </Link>
+                  </Button>
+                )}
+              </div>
             ) : (
-              <Button asChild size="lg" className="bg-red-500 hover:bg-red-600">
+              <Button asChild size="lg">
                 <Link href={`/w/${workspaceSlug}/predictions`}>
                   Hacer Predicción
                 </Link>

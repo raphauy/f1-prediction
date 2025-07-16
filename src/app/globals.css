@@ -122,4 +122,36 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Asegurar que los radio buttons sean redondos */
+  input[type="radio"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    border-radius: 50%;
+  }
+  
+  /* Fix para radio buttons en componentes Radix */
+  [data-slot="radio-group-item"] {
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    border-radius: 50% !important;
+    width: 1rem !important;
+    height: 1rem !important;
+    min-width: 1rem !important;
+    min-height: 1rem !important;
+    max-width: 1rem !important;
+    max-height: 1rem !important;
+  }
+  
+  /* Tamaño específico para diferentes breakpoints */
+  @media (min-width: 640px) {
+    [data-slot="radio-group-item"].sm\:h-4.sm\:w-4 {
+      width: 1rem !important;
+      height: 1rem !important;
+      min-width: 1rem !important;
+      min-height: 1rem !important;
+    }
+  }
 }

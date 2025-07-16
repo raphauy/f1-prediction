@@ -94,7 +94,7 @@ export async function getWorkspaceSeasonWithDetails(
 /**
  * Obtiene el próximo Grand Prix con deadline abierto
  */
-export async function getNextGrandPrixForWorkspace(workspaceId: string): Promise<GrandPrix | null> {
+export async function getNextGrandPrixForWorkspace(workspaceId: string) {
   const activeSeason = await getActiveSeasonForWorkspace(workspaceId)
   if (!activeSeason) return null
 
@@ -109,6 +109,13 @@ export async function getNextGrandPrixForWorkspace(workspaceId: string): Promise
     },
     orderBy: {
       qualifyingDate: 'asc'
+    },
+    include: {
+      _count: {
+        select: {
+          gpQuestions: true
+        }
+      }
     }
   })
 }

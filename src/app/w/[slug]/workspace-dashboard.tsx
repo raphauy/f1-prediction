@@ -37,6 +37,7 @@ export async function WorkspaceDashboard({ slug }: WorkspaceDashboardProps) {
     topStandings, 
     userPosition, 
     hasUserPredicted,
+    userPredictionInfo,
     stats 
   } = dashboardData
 
@@ -58,6 +59,7 @@ export async function WorkspaceDashboard({ slug }: WorkspaceDashboardProps) {
       <NextGPCard 
         grandPrix={nextGP} 
         hasUserPredicted={hasUserPredicted}
+        userPredictionInfo={userPredictionInfo}
         workspaceSlug={slug}
       />
 
