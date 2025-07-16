@@ -62,7 +62,6 @@
 
 **Acceptance Criteria:**
 - Users can submit predictions before deadline on mobile devices
-- Predictions are immutable after submission
 - Form provides smooth UX with proper validation
 - Users can view their prediction history
 

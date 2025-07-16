@@ -30,7 +30,7 @@ export function TeamSelector({ value, onChange }: TeamSelectorProps) {
         className="w-full"
       />
 
-      <ScrollArea className="h-[400px] rounded-md border p-2">
+      <ScrollArea className="h-[300px] rounded-md border p-2">
         <div className="grid grid-cols-1 gap-2">
           {filteredTeams.map((team) => (
             <button

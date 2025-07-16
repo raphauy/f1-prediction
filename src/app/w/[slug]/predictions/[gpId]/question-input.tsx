@@ -5,7 +5,6 @@ import { TeamSelector } from './team-selector'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import { Switch } from '@/components/ui/switch'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
 
@@ -92,16 +91,22 @@ export function QuestionInput({ type, options, value, onChange, error }: Questio
     case 'BOOLEAN':
       return (
         <div className="space-y-4">
-          <div className="flex items-center space-x-4">
-            <Switch
-              checked={value === 'Sí'}
-              onCheckedChange={(checked) => onChange(checked ? 'Sí' : 'No')}
-              id="boolean-switch"
-            />
-            <Label htmlFor="boolean-switch" className="text-lg">
-              {value === 'Sí' ? 'Sí' : 'No'}
-            </Label>
-          </div>
+          <RadioGroup value={value} onValueChange={onChange}>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="Sí" id="si" />
+                <Label htmlFor="si" className="cursor-pointer flex-1">
+                  Sí
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="No" id="no" />
+                <Label htmlFor="no" className="cursor-pointer flex-1">
+                  No
+                </Label>
+              </div>
+            </div>
+          </RadioGroup>
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />

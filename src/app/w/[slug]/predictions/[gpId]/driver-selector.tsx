@@ -40,7 +40,7 @@ export function DriverSelector({ value, onChange }: DriverSelectorProps) {
         className="w-full"
       />
 
-      <ScrollArea className="h-[400px] pr-4">
+      <ScrollArea className="h-[300px] pr-4">
         <div className="space-y-6">
           {Object.entries(driversByTeam).map(([team, drivers]) => (
             <div key={team} className="space-y-2">

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -9,9 +9,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { QUESTION_BADGES } from '@/lib/constants/question-badges'
+import { cn } from '@/lib/utils'
 import { Loader2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { QuestionInput } from './question-input'
 
 interface PredictionModalProps {
@@ -38,11 +39,18 @@ export function PredictionModal({
   isSaving,
   currentAnswer
 }: PredictionModalProps) {
-  const [answer, setAnswer] = useState(currentAnswer || '')
+  // Para preguntas booleanas, inicializar con "No" si no hay respuesta previa
+  const getInitialAnswer = () => {
+    if (currentAnswer) return currentAnswer
+    if (question.type === 'BOOLEAN') return 'No'
+    return ''
+  }
+
+  const [answer, setAnswer] = useState(getInitialAnswer())
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    setAnswer(currentAnswer || '')
+    setAnswer(getInitialAnswer())
     setError(null)
   }, [currentAnswer, question])
 
@@ -64,22 +72,31 @@ export function PredictionModal({
     }
   }
 
+  const badgeInfo = question.badge ? QUESTION_BADGES[question.badge as keyof typeof QUESTION_BADGES] : null
+  const BadgeIcon = badgeInfo?.icon
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle>
             {question.text}
-            {question.badge && (
-              <Badge variant="outline">{question.badge}</Badge>
-            )}
           </DialogTitle>
-          <DialogDescription>
-            Valor: {question.points} puntos
+          <DialogDescription className="flex items-center justify-between">
+            <span>Valor: {question.points} puntos</span>
+            {question.badge && badgeInfo && (
+              <div className={cn(
+                "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium",
+                badgeInfo.color
+              )}>
+                {BadgeIcon && <BadgeIcon className="h-3 w-3" />}
+                <span>{badgeInfo.label}</span>
+              </div>
+            )}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="py-6">
+        <div className="py-4 overflow-y-auto flex-1">
           <QuestionInput
             type={question.type || 'MULTIPLE_CHOICE'}
             options={question.options}
@@ -89,7 +106,7 @@ export function PredictionModal({
           />
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0">
           <Button
             variant="outline"
             onClick={handleClose}
