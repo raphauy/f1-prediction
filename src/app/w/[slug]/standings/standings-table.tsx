@@ -1,11 +1,10 @@
 import { getWorkspaceStandings } from "@/services/standings-service"
 import { getActiveSeasonForWorkspace } from "@/services/workspace-season-service"
 import { getWorkspaceBySlug } from "@/services/workspace-service"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Trophy, AlertCircle } from "lucide-react"
-import { StandingsClient } from "./standings-client"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { StandingsTableClient } from "./standings-table-client"
+import { StandingsWrapper } from "./standings-wrapper"
 
 interface StandingsTableProps {
   workspaceId: string
@@ -60,24 +59,11 @@ export async function StandingsTable({ workspaceId, currentUserId, workspaceSlug
   const slug = workspace?.slug || workspaceSlug || ""
 
   return (
-    <div className="space-y-4">
-      {/* Filtros y búsqueda - Cliente */}
-      <StandingsClient workspaceSlug={slug} />
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Tabla de Posiciones</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* Tabla interactiva con estadísticas - Cliente */}
-          <StandingsTableClient 
-            standings={standingsWithTrend}
-            currentUserId={currentUserId}
-            workspaceSlug={slug}
-            workspaceSeasonId={activeSeason.id}
-          />
-        </CardContent>
-      </Card>
-    </div>
+    <StandingsWrapper
+      standings={standingsWithTrend}
+      currentUserId={currentUserId}
+      workspaceSlug={slug}
+      workspaceSeasonId={activeSeason.id}
+    />
   )
 }

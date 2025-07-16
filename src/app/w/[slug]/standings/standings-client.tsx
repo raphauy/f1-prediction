@@ -5,17 +5,31 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Download, Share2 } from "lucide-react"
+import { Search, Download, Share2, Users } from "lucide-react"
 import { exportStandingsToCSV } from "./actions"
 import { toast } from "sonner"
+import { UserComparisonDialog } from "./user-comparison-dialog"
 
 interface StandingsClientProps {
   workspaceSlug: string
+  onSearchChange?: (search: string) => void
+  onFilterChange?: (filter: string) => void
 }
 
-export function StandingsClient({ workspaceSlug }: StandingsClientProps) {
+export function StandingsClient({ workspaceSlug, onSearchChange, onFilterChange }: StandingsClientProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterBy, setFilterBy] = useState("all")
+  const [showComparison, setShowComparison] = useState(false)
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value)
+    onSearchChange?.(value)
+  }
+
+  const handleFilterChange = (value: string) => {
+    setFilterBy(value)
+    onFilterChange?.(value)
+  }
 
   const handleExport = async () => {
     try {
@@ -81,13 +95,13 @@ export function StandingsClient({ workspaceSlug }: StandingsClientProps) {
           <Input
             placeholder="Buscar competidor..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-9"
           />
         </div>
 
         {/* Filtros */}
-        <Select value={filterBy} onValueChange={setFilterBy}>
+        <Select value={filterBy} onValueChange={handleFilterChange}>
           <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Filtrar por" />
           </SelectTrigger>
@@ -100,6 +114,14 @@ export function StandingsClient({ workspaceSlug }: StandingsClientProps) {
 
         {/* Acciones */}
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setShowComparison(true)}
+            title="Comparar usuarios"
+          >
+            <Users className="h-4 w-4" />
+          </Button>
           <Button
             variant="outline"
             size="icon"
@@ -118,6 +140,13 @@ export function StandingsClient({ workspaceSlug }: StandingsClientProps) {
           </Button>
         </div>
       </div>
+      
+      {/* Diálogo de comparación */}
+      <UserComparisonDialog
+        open={showComparison}
+        onOpenChange={setShowComparison}
+        workspaceSlug={workspaceSlug}
+      />
     </Card>
   )
 }

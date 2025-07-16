@@ -9,6 +9,7 @@ import {
 import { revalidatePath } from "next/cache"
 import { getActiveWorkspaceSeasons } from "@/services/workspace-season-service"
 import { prisma } from "@/lib/prisma"
+import { logResultsPublished } from "@/services/activity-service"
 
 export async function processGrandPrixAction(
   grandPrixId: string,
@@ -48,6 +49,15 @@ export async function processGrandPrixAction(
         .forEach((result, index) => {
           console.log(`   ${index + 1}. ${result.userName}: ${result.totalPoints} pts (${result.correctPredictions}/${result.totalPredictions} correctas)`)
         })
+      
+      // Registrar actividad de resultados publicados
+      if (workspaceSeason && grandPrix) {
+        await logResultsPublished(
+          workspaceSeason.workspace.id,
+          session.user.id,
+          grandPrix.name
+        )
+      }
     }
     
     const summary = {

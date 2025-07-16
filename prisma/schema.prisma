@@ -33,6 +33,7 @@ model User {
   predictions    Prediction[]
   seasonStandings SeasonStanding[]
   officialResults OfficialResult[]
+  activityLogs   ActivityLog[]
   
   @@map("users")
 }
@@ -69,6 +70,7 @@ model Workspace {
   
   // Relaciones F1
   workspaceSeasons WorkspaceSeason[]
+  activityLogs     ActivityLog[]
   
   @@map("workspaces")
 }
@@ -273,6 +275,31 @@ model Prediction {
   @@unique([userId, grandPrixId, gpQuestionId])
   @@index([userId, grandPrixId])
   @@map("predictions")
+}
+
+model ActivityLog {
+  id             String        @id @default(cuid())
+  workspaceId    String
+  userId         String
+  type           ActivityType
+  description    String
+  metadata       Json?         // Datos adicionales (GP name, points, etc)
+  createdAt      DateTime      @default(now())
+  
+  // Relaciones
+  workspace      Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([workspaceId, createdAt(sort: Desc)])
+  @@map("activity_logs")
+}
+
+enum ActivityType {
+  prediction_submitted
+  points_earned
+  results_published
+  member_joined
+  member_left
 }
 
 model PredictionPoints {

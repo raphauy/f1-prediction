@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
+import { logPointsEarned } from "@/services/activity-service"
 
 // Schema para procesar resultados
 export const processGrandPrixResultsSchema = z.object({
@@ -33,8 +34,13 @@ export async function processGrandPrixResults(
   grandPrixId: string,
   workspaceSeasonId: string
 ): Promise<ScoringResult[]> {
-  // Verificar que existan resultados oficiales completos
-  const [totalQuestions, officialResultsCount] = await Promise.all([
+  // Obtener información del GP y workspace
+  const [grandPrix, workspaceSeason, totalQuestions, officialResultsCount] = await Promise.all([
+    prisma.grandPrix.findUnique({ where: { id: grandPrixId } }),
+    prisma.workspaceSeason.findUnique({ 
+      where: { id: workspaceSeasonId },
+      include: { workspace: true }
+    }),
     prisma.gPQuestion.count({ where: { grandPrixId } }),
     prisma.officialResult.count({ where: { grandPrixId } }),
   ])
@@ -146,8 +152,34 @@ export async function processGrandPrixResults(
       })
     }
     
-    // Actualizar standings del usuario
-    await updateUserStandings(userId, workspaceSeasonId, scoringResult.totalPoints)
+    // Actualizar standings del usuario (recalcula totales)
+    await updateUserStandings(userId, workspaceSeasonId)
+    
+    // Registrar actividad si el usuario ganó puntos
+    // Solo registrar si es la primera vez que se procesan los resultados
+    if (scoringResult.totalPoints > 0 && grandPrix && workspaceSeason) {
+      // Verificar si ya existe una actividad de puntos para este usuario y GP
+      const existingActivity = await prisma.activityLog.findFirst({
+        where: {
+          workspaceId: workspaceSeason.workspace.id,
+          userId,
+          type: 'points_earned',
+          metadata: {
+            path: ['grandPrixName'],
+            equals: grandPrix.name
+          }
+        }
+      })
+      
+      if (!existingActivity) {
+        await logPointsEarned(
+          workspaceSeason.workspace.id,
+          userId,
+          grandPrix.name,
+          scoringResult.totalPoints
+        )
+      }
+    }
     
     results.push(scoringResult)
   }
@@ -157,42 +189,53 @@ export async function processGrandPrixResults(
 
 /**
  * Actualiza los standings del usuario en el workspace
+ * Esta función recalcula completamente los puntos y el contador de GPs
  */
 async function updateUserStandings(
   userId: string,
-  workspaceSeasonId: string,
-  newPoints: number
+  workspaceSeasonId: string
 ): Promise<void> {
-  // Obtener standing actual
-  const currentStanding = await prisma.seasonStanding.findUnique({
+  // Calcular puntos totales y número de GPs únicos
+  const userPoints = await prisma.predictionPoints.findMany({
+    where: {
+      workspaceSeasonId,
+      prediction: { userId }
+    },
+    include: {
+      prediction: {
+        include: {
+          grandPrix: true
+        }
+      }
+    }
+  })
+  
+  // Calcular puntos totales
+  const totalPoints = userPoints.reduce((sum, pp) => sum + pp.points, 0)
+  
+  // Contar GPs únicos (no el número de predicciones)
+  const uniqueGPs = new Set(userPoints.map(pp => pp.prediction.grandPrixId))
+  const gpCount = uniqueGPs.size
+  
+  // Actualizar o crear standing
+  await prisma.seasonStanding.upsert({
     where: {
       workspaceSeasonId_userId: {
         workspaceSeasonId,
         userId,
       },
     },
+    update: {
+      totalPoints,
+      predictionsCount: gpCount,
+    },
+    create: {
+      workspaceSeasonId,
+      userId,
+      totalPoints,
+      predictionsCount: gpCount,
+    },
   })
-  
-  if (currentStanding) {
-    // Actualizar puntos totales
-    await prisma.seasonStanding.update({
-      where: { id: currentStanding.id },
-      data: {
-        totalPoints: currentStanding.totalPoints + newPoints,
-        predictionsCount: currentStanding.predictionsCount + 1,
-      },
-    })
-  } else {
-    // Crear nuevo standing
-    await prisma.seasonStanding.create({
-      data: {
-        workspaceSeasonId,
-        userId,
-        totalPoints: newPoints,
-        predictionsCount: 1,
-      },
-    })
-  }
   
   // Actualizar posiciones de todos los usuarios en el workspace
   await updateStandingPositions(workspaceSeasonId)

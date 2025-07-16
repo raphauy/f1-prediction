@@ -50,6 +50,34 @@ export async function compareUsers(userIds: string[], workspaceSlug: string) {
   return comparison
 }
 
+export async function getUsersForComparisonAction(workspaceSlug: string) {
+  const session = await auth()
+  if (!session?.user?.id) {
+    throw new Error("No autorizado")
+  }
+
+  const workspace = await getWorkspaceBySlug(workspaceSlug)
+  if (!workspace) {
+    throw new Error("Workspace no encontrado")
+  }
+
+  const activeSeason = await getActiveSeasonForWorkspace(workspace.id)
+  if (!activeSeason) {
+    throw new Error("No hay temporada activa")
+  }
+
+  const { getWorkspaceStandings } = await import("@/services/standings-service")
+  const standings = await getWorkspaceStandings(activeSeason.id)
+  
+  return standings.map(s => ({
+    id: s.user.id,
+    name: s.user.name || s.user.email.split("@")[0],
+    email: s.user.email,
+    position: s.position,
+    totalPoints: s.totalPoints
+  }))
+}
+
 export async function exportStandingsToCSV(workspaceSlug: string) {
   const session = await auth()
   if (!session?.user?.id) {

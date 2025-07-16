@@ -17,6 +17,9 @@ import {
   getWorkspaceStats
 } from "@/services/standings-service"
 import { getWorkspaceBySlug } from "@/services/workspace-service"
+import { getGlobalStandings } from "@/services/global-standings-service"
+import { getDashboardActivities } from "@/services/activity-service"
+import { prisma } from "@/lib/prisma"
 
 /**
  * Obtiene la información del dashboard F1 para un workspace
@@ -34,17 +37,29 @@ export async function getDashboardData(slug: string) {
 
   const activeSeason = await getActiveSeasonForWorkspace(workspace.id)
   
-  const [nextGP, lastGP, topStandings, userPosition, stats] = await Promise.all([
+  const [nextGP, lastGP, topStandings, userPosition, stats, globalStandings, recentActivities] = await Promise.all([
     getNextGrandPrixForWorkspace(workspace.id),
     getLastGrandPrixWithResults(workspace.id),
     activeSeason ? getTopStandings(activeSeason.id, 5) : Promise.resolve(null),
     activeSeason ? getUserPosition(activeSeason.id, session.user.id) : Promise.resolve(null),
-    activeSeason ? getWorkspaceStats(activeSeason.id) : Promise.resolve(null)
+    activeSeason ? getWorkspaceStats(activeSeason.id) : Promise.resolve(null),
+    getGlobalStandings({ limit: 5 }),
+    getDashboardActivities(workspace.id)
   ])
 
-  // Si hay temporada activa, asegurar que el usuario tenga standing
+  // Si hay temporada activa y el usuario es miembro del workspace, asegurar que tenga standing
   if (activeSeason) {
-    await getOrCreateUserStanding(activeSeason.id, session.user.id)
+    // Verificar si el usuario es miembro del workspace (no solo superadmin)
+    const isMember = await prisma.workspaceUser.findFirst({
+      where: {
+        userId: session.user.id,
+        workspaceId: workspace.id
+      }
+    })
+    
+    if (isMember) {
+      await getOrCreateUserStanding(activeSeason.id, session.user.id)
+    }
   }
 
   // Obtener información de predicciones del usuario para el próximo GP
@@ -64,10 +79,12 @@ export async function getDashboardData(slug: string) {
     nextGP,
     lastGP,
     topStandings,
+    globalStandings: globalStandings.standings,
     userPosition,
     hasUserPredicted: userPredictionInfo.hasUserPredicted,
     userPredictionInfo,
-    stats
+    stats,
+    recentActivities
   }
 }
 

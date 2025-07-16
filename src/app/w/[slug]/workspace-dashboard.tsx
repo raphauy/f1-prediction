@@ -3,6 +3,7 @@ import { getWorkspaceBySlug, isUserInWorkspace } from "@/services/workspace-serv
 import { getDashboardData } from "./actions"
 import { NextGPCard } from "./next-gp-card"
 import { StandingsPreview } from "./standings-preview"
+import { GlobalStandingsPreview } from "./global-standings-preview"
 import { UserStatusCard } from "./user-status-card"
 import { WorkspaceStatsCard } from "./workspace-stats-card"
 import { RecentActivity } from "./recent-activity"
@@ -33,12 +34,13 @@ export async function WorkspaceDashboard({ slug }: WorkspaceDashboardProps) {
   const { 
     activeSeason, 
     nextGP, 
-    lastGP, 
-    topStandings, 
+    topStandings,
+    globalStandings, 
     userPosition, 
     hasUserPredicted,
     userPredictionInfo,
-    stats 
+    stats,
+    recentActivities 
   } = dashboardData
 
   // Obtener el standing del usuario actual si existe
@@ -84,14 +86,13 @@ export async function WorkspaceDashboard({ slug }: WorkspaceDashboardProps) {
 
       {/* Clasificación y Actividad */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {activeSeason && topStandings && topStandings.length > 3 && (
-          <StandingsPreview 
-            standings={topStandings}
+        {globalStandings && globalStandings.length > 0 && (
+          <GlobalStandingsPreview 
+            standings={globalStandings}
             currentUserId={session.user.id}
-            workspaceSlug={slug}
           />
         )}
-        <RecentActivity lastGP={lastGP} />
+        <RecentActivity activities={recentActivities} />
       </div>
     </div>
   )

@@ -192,13 +192,20 @@ export async function addUserToWorkspace(
   workspaceId: string,
   role: WorkspaceRole = WorkspaceRole.member
 ): Promise<WorkspaceUser> {
-  return await prisma.workspaceUser.create({
+  const workspaceUser = await prisma.workspaceUser.create({
     data: {
       userId,
       workspaceId,
       role
     }
   })
+  
+  // Registrar actividad cuando un nuevo miembro se une
+  // Solo importar cuando sea necesario para evitar dependencias circulares
+  const { logMemberJoined } = await import("@/services/activity-service")
+  await logMemberJoined(workspaceId, userId)
+  
+  return workspaceUser
 }
 
 /**

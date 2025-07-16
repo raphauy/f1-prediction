@@ -100,8 +100,10 @@ export function StandingsTableClient({
               <React.Fragment key={standing.id}>
                 <TableRow 
                   className={cn(
-                    isCurrentUser && "bg-primary/5 font-medium"
+                    isCurrentUser && "bg-primary/5 font-medium",
+                    "cursor-pointer hover:bg-muted/50 transition-colors"
                   )}
+                  onClick={() => handleToggleExpand(standing.user.id)}
                 >
                   <TableCell className="text-center font-mono">
                     <div className="flex items-center justify-center gap-1">
@@ -136,8 +138,12 @@ export function StandingsTableClient({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleToggleExpand(standing.user.id)}
-                        className="h-6 w-6 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleToggleExpand(standing.user.id)
+                        }}
+                        className="h-6 w-6 p-0 opacity-60 hover:opacity-100"
+                        title={isExpanded ? "Ocultar estadísticas" : "Ver estadísticas"}
                       >
                         {isExpanded ? (
                           <ChevronUp className="h-3 w-3" />

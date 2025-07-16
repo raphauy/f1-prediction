@@ -81,9 +81,10 @@
 - Points calculate based on prediction accuracy with a button to process
 - Leaderboards update in real-time after results
 
-### Phase 5: Leaderboards & Statistics
+### Phase 5: Leaderboards & Statistics ✅
 **Dependencies:** Phase 4 completion  
 **Estimated Duration:** 3-4 days
+**Status:** COMPLETED
 
 **Tasks:**
 - [x] Design responsive leaderboard components
@@ -92,14 +93,16 @@
 - [x] Build user performance analytics
 - [x] Add historical data visualization
 - [x] Implement sorting and filtering options
-- [ ] Create comparison features between users
+- [x] Create comparison features between users
 - [x] Add export functionality for standings
+- [x] Implement global standings page
 
 **Acceptance Criteria:**
-- Real-time leaderboards show current standings
-- Users can view detailed statistics per GP
-- Historical performance data is accessible
-- Mobile-optimized table layouts work smoothly
+- Real-time leaderboards show current standings ✅
+- Users can view detailed statistics per GP ✅
+- Historical performance data is accessible ✅
+- Mobile-optimized table layouts work smoothly ✅
+- Global rankings across all workspaces ✅
 
 ### Phase 6: Notifications & Email System
 **Dependencies:** Phase 5 completion  

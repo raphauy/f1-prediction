@@ -1,50 +1,32 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Activity, Trophy, Target, CheckCircle } from "lucide-react"
+import { Activity, Trophy, Target, CheckCircle, UserPlus } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 
-interface RecentActivityProps {
-  lastGP?: {
-    name: string
-    raceDate: Date
-  } | null
+interface ActivityData {
+  id: string
+  type: string
+  user: string
+  description: string
+  time: Date
+  metadata?: Record<string, unknown> | null
+  icon: string
+  color: string
 }
 
-export function RecentActivity({ lastGP }: RecentActivityProps) {
-  // Por ahora mostraremos actividad simulada
-  // En el futuro, esto vendrá de la base de datos
-  const mockActivities = lastGP ? [
-    {
-      id: 1,
-      type: "prediction",
-      user: "Carlos M.",
-      action: "realizó predicciones",
-      gp: lastGP.name,
-      time: new Date(Date.now() - 2 * 60 * 60 * 1000), // Hace 2 horas
-      icon: Target,
-      color: "text-blue-500"
-    },
-    {
-      id: 2,
-      type: "points",
-      user: "Ana G.",
-      action: "ganó 45 puntos",
-      gp: "GP anterior",
-      time: new Date(Date.now() - 24 * 60 * 60 * 1000), // Hace 1 día
-      icon: Trophy,
-      color: "text-yellow-500"
-    },
-    {
-      id: 3,
-      type: "prediction",
-      user: "Miguel R.",
-      action: "realizó predicciones",
-      gp: lastGP.name,
-      time: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // Hace 3 días
-      icon: CheckCircle,
-      color: "text-green-500"
-    }
-  ] : []
+interface RecentActivityProps {
+  activities: ActivityData[]
+}
+
+export function RecentActivity({ activities }: RecentActivityProps) {
+  // Mapeo de iconos string a componentes
+  const iconMap: Record<string, React.FC<{ className?: string }>> = {
+    Target,
+    Trophy,
+    CheckCircle,
+    UserPlus,
+    Activity
+  }
 
   return (
     <Card>
@@ -55,10 +37,10 @@ export function RecentActivity({ lastGP }: RecentActivityProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {mockActivities.length > 0 ? (
+        {activities.length > 0 ? (
           <div className="space-y-4">
-            {mockActivities.map((activity) => {
-              const Icon = activity.icon
+            {activities.map((activity) => {
+              const Icon = iconMap[activity.icon] || Activity
               return (
                 <div key={activity.id} className="flex items-start space-x-3">
                   <div className={`mt-0.5 ${activity.color}`}>
@@ -67,11 +49,10 @@ export function RecentActivity({ lastGP }: RecentActivityProps) {
                   <div className="flex-1 space-y-1">
                     <p className="text-sm">
                       <span className="font-medium">{activity.user}</span>{" "}
-                      {activity.action} para el{" "}
-                      <span className="font-medium">{activity.gp}</span>
+                      {activity.description}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {format(activity.time, "d 'de' MMMM 'a las' HH:mm", { locale: es })}
+                      {format(new Date(activity.time), "d 'de' MMMM 'a las' HH:mm", { locale: es })}
                     </p>
                   </div>
                 </div>

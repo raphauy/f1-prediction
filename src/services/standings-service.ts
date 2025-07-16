@@ -52,8 +52,31 @@ export async function getOrCreateUserStanding(
  * Obtiene la tabla de posiciones de un workspace
  */
 export async function getWorkspaceStandings(workspaceSeasonId: string): Promise<StandingWithUser[]> {
+  // Primero obtener el workspaceId desde workspaceSeason
+  const workspaceSeason = await prisma.workspaceSeason.findUnique({
+    where: { id: workspaceSeasonId },
+    select: { workspaceId: true }
+  })
+  
+  if (!workspaceSeason) {
+    return []
+  }
+  
+  // Primero obtener los IDs de usuarios que son miembros del workspace
+  const workspaceMembers = await prisma.workspaceUser.findMany({
+    where: { workspaceId: workspaceSeason.workspaceId },
+    select: { userId: true }
+  })
+  
+  const memberUserIds = workspaceMembers.map(wu => wu.userId)
+  
   const standings = await prisma.seasonStanding.findMany({
-    where: { workspaceSeasonId },
+    where: { 
+      workspaceSeasonId,
+      userId: {
+        in: memberUserIds
+      }
+    },
     include: {
       user: true
     },
@@ -78,8 +101,31 @@ export async function getTopStandings(
   workspaceSeasonId: string, 
   limit: number = 5
 ): Promise<StandingWithUser[]> {
+  // Primero obtener el workspaceId desde workspaceSeason
+  const workspaceSeason = await prisma.workspaceSeason.findUnique({
+    where: { id: workspaceSeasonId },
+    select: { workspaceId: true }
+  })
+  
+  if (!workspaceSeason) {
+    return []
+  }
+  
+  // Primero obtener los IDs de usuarios que son miembros del workspace
+  const workspaceMembers = await prisma.workspaceUser.findMany({
+    where: { workspaceId: workspaceSeason.workspaceId },
+    select: { userId: true }
+  })
+  
+  const memberUserIds = workspaceMembers.map(wu => wu.userId)
+  
   const standings = await prisma.seasonStanding.findMany({
-    where: { workspaceSeasonId },
+    where: { 
+      workspaceSeasonId,
+      userId: {
+        in: memberUserIds
+      }
+    },
     include: {
       user: true
     },
@@ -197,15 +243,47 @@ export async function getUserPosition(
  * Obtiene estadísticas del workspace
  */
 export async function getWorkspaceStats(workspaceSeasonId: string) {
+  // Primero obtener el workspaceId desde workspaceSeason
+  const workspaceSeason = await prisma.workspaceSeason.findUnique({
+    where: { id: workspaceSeasonId },
+    select: { workspaceId: true }
+  })
+  
+  if (!workspaceSeason) {
+    return {
+      totalUsers: 0,
+      totalPredictions: 0,
+      averagePoints: 0
+    }
+  }
+  
+  // Primero obtener los IDs de usuarios que son miembros del workspace
+  const workspaceMembers = await prisma.workspaceUser.findMany({
+    where: { workspaceId: workspaceSeason.workspaceId },
+    select: { userId: true }
+  })
+  
+  const memberUserIds = workspaceMembers.map(wu => wu.userId)
+  
   const [totalUsers, totalPredictions, avgPoints] = await Promise.all([
     prisma.seasonStanding.count({
-      where: { workspaceSeasonId }
+      where: { 
+        workspaceSeasonId,
+        userId: {
+          in: memberUserIds
+        }
+      }
     }),
     prisma.predictionPoints.count({
       where: { workspaceSeasonId }
     }),
     prisma.seasonStanding.aggregate({
-      where: { workspaceSeasonId },
+      where: { 
+        workspaceSeasonId,
+        userId: {
+          in: memberUserIds
+        }
+      },
       _avg: { totalPoints: true }
     })
   ])
