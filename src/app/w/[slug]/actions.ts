@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth"
 import { 
   getActiveSeasonForWorkspace, 
   getNextGrandPrixForWorkspace,
+  getNextGrandPrix,
   getLastGrandPrixWithResults 
 } from "@/services/workspace-season-service"
 import {
@@ -37,8 +38,10 @@ export async function getDashboardData(slug: string) {
 
   const activeSeason = await getActiveSeasonForWorkspace(workspace.id)
   
-  const [nextGP, lastGP, topStandings, userPosition, stats, globalStandings, recentActivities] = await Promise.all([
-    getNextGrandPrixForWorkspace(workspace.id),
+  // Obtener el próximo GP para mostrar (sin importar estado) y el GP activo para predicciones
+  const [nextGPDisplay, nextGPActive, lastGP, topStandings, userPosition, stats, globalStandings, recentActivities] = await Promise.all([
+    getNextGrandPrix(workspace.id), // GP para mostrar (cualquier estado)
+    getNextGrandPrixForWorkspace(workspace.id), // GP activo para predicciones
     getLastGrandPrixWithResults(workspace.id),
     activeSeason ? getTopStandings(activeSeason.id, 5) : Promise.resolve(null),
     activeSeason ? getUserPosition(activeSeason.id, session.user.id) : Promise.resolve(null),
@@ -62,11 +65,12 @@ export async function getDashboardData(slug: string) {
     }
   }
 
-  // Obtener información de predicciones del usuario para el próximo GP
+  // Obtener información de predicciones del usuario
   let userPredictionInfo = { hasUserPredicted: false, predictionCount: 0, totalQuestions: 0 }
-  if (nextGP) {
-    const predictions = await getUserPredictionsForGP(session.user.id, nextGP.id)
-    const totalQuestions = nextGP._count?.gpQuestions || 0
+  // Si hay un GP activo y es el mismo que se va a mostrar, obtener la info de predicciones
+  if (nextGPActive && nextGPDisplay && nextGPActive.id === nextGPDisplay.id) {
+    const predictions = await getUserPredictionsForGP(session.user.id, nextGPActive.id)
+    const totalQuestions = nextGPActive._count?.gpQuestions || 0
     userPredictionInfo = {
       hasUserPredicted: predictions.length > 0,
       predictionCount: predictions.length,
@@ -74,9 +78,14 @@ export async function getDashboardData(slug: string) {
     }
   }
 
+  // Determinar si el GP que se muestra está activo
+  const isGPActive = nextGPActive && nextGPDisplay && nextGPActive.id === nextGPDisplay.id
+  
   return {
     activeSeason,
-    nextGP,
+    nextGP: nextGPDisplay, // GP para mostrar en el card
+    nextGPActive, // GP activo para predicciones
+    isGPActive, // Si el GP mostrado es el activo
     lastGP,
     topStandings,
     globalStandings: globalStandings.standings,

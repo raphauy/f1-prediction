@@ -150,6 +150,7 @@ export async function getActiveGPForPredictions(seasonId: string) {
   return await prisma.grandPrix.findFirst({
     where: {
       seasonId,
+      status: 'ACTIVE', // Solo GPs activos, no pausados
       qualifyingDate: {
         gt: now // Deadline aún no ha pasado
       }

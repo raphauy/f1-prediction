@@ -1,11 +1,19 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { ProfileForm } from "./profile-form"
+import { getUserById } from "@/services/user-service"
 
 export default async function ProfilePage() {
   const session = await auth()
   
   if (!session?.user) {
+    redirect("/login")
+  }
+
+  // Obtener el usuario completo con preferencias de notificaciones
+  const user = await getUserById(session.user.id)
+  
+  if (!user) {
     redirect("/login")
   }
 
@@ -18,7 +26,7 @@ export default async function ProfilePage() {
         </p>
       </div>
 
-      <ProfileForm user={session.user} />
+      <ProfileForm user={user} />
     </div>
   )
 }

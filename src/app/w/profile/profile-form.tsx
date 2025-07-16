@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Upload, Loader2, User, Save, ArrowLeft } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
+import { Upload, Loader2, User, Save, ArrowLeft, Mail } from "lucide-react"
 import { toast } from "sonner"
 import { updateProfileAction, uploadProfileImageAction } from "./actions"
 import { useRouter } from "next/navigation"
@@ -18,12 +19,18 @@ interface ProfileFormProps {
     email: string
     name?: string | null
     image?: string | null
+    notifyGPLaunched?: boolean
+    notifyReminders?: boolean
+    notifyResults?: boolean
   }
 }
 
 export function ProfileForm({ user }: ProfileFormProps) {
   const [name, setName] = useState(user.name || "")
   const [image, setImage] = useState(user.image || "")
+  const [notifyGPLaunched, setNotifyGPLaunched] = useState(user.notifyGPLaunched ?? true)
+  const [notifyReminders, setNotifyReminders] = useState(user.notifyReminders ?? true)
+  const [notifyResults, setNotifyResults] = useState(user.notifyResults ?? true)
   const [isLoading, setIsLoading] = useState(false)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [imageKey, setImageKey] = useState(0) // Para forzar re-render de imagen
@@ -82,7 +89,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
     try {
       const result = await updateProfileAction({
         name: name.trim(),
-        image: image || null
+        image: image || null,
+        notifyGPLaunched,
+        notifyReminders,
+        notifyResults
       })
 
       if (result.success) {
@@ -230,6 +240,73 @@ export function ProfileForm({ user }: ProfileFormProps) {
                 </CardContent>
               </Card>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Preferencias de Notificaciones */}
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            <div className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Preferencias de Notificaciones
+            </div>
+          </CardTitle>
+          <CardDescription>
+            Elige qué notificaciones por email deseas recibir
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="notify-gp-launched" className="font-medium">
+                Nuevos Grand Prix
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Recibir email cuando se lance un nuevo GP para predicciones
+              </p>
+            </div>
+            <Switch
+              id="notify-gp-launched"
+              checked={notifyGPLaunched}
+              onCheckedChange={setNotifyGPLaunched}
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="notify-reminders" className="font-medium">
+                Recordatorios
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Recordatorios sobre el cierre de predicciones
+              </p>
+            </div>
+            <Switch
+              id="notify-reminders"
+              checked={notifyReminders}
+              onCheckedChange={setNotifyReminders}
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="notify-results" className="font-medium">
+                Resultados
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Notificaciones cuando se publiquen los resultados oficiales
+              </p>
+            </div>
+            <Switch
+              id="notify-results"
+              checked={notifyResults}
+              onCheckedChange={setNotifyResults}
+              disabled={isLoading}
+            />
           </div>
         </CardContent>
       </Card>

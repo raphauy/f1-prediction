@@ -8,6 +8,9 @@ import { revalidatePath } from "next/cache"
 interface UpdateProfileInput {
   name: string
   image?: string | null
+  notifyGPLaunched?: boolean
+  notifyReminders?: boolean
+  notifyResults?: boolean
 }
 
 export async function updateProfileAction(input: UpdateProfileInput) {
@@ -20,7 +23,10 @@ export async function updateProfileAction(input: UpdateProfileInput) {
 
     const result = await updateUser(session.user.id, {
       name: input.name,
-      image: input.image
+      image: input.image,
+      notifyGPLaunched: input.notifyGPLaunched,
+      notifyReminders: input.notifyReminders,
+      notifyResults: input.notifyResults
     })
 
     if (!result) {

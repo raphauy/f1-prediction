@@ -1,0 +1,19 @@
+name: Finish Grand Prix Automatically
+
+on:
+  schedule:
+    # Ejecutar cada 6 horas
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # Permitir ejecución manual
+
+jobs:
+  finish-gps:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Call Finish GPs endpoint
+        run: |
+          curl -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            "${{ secrets.PRODUCTION_URL }}/api/cron/finish-gps"

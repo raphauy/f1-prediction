@@ -48,6 +48,30 @@ Un starter kit completo para aplicaciones NextJS con autenticación OTP, gestió
 - **Co-location** - Componentes junto a las páginas que los usan
 - **Arquitectura en capas** - Servicios, lógica de negocio, presentación
 
+## 🔄 Tareas Automáticas (Cron Jobs)
+
+### Finalizar Grand Prix automáticamente
+El sistema incluye un endpoint para actualizar automáticamente el estado de los GPs a FINISHED cuando pasa la fecha de carrera:
+
+```bash
+# Endpoint
+GET /api/cron/finish-gps
+
+# Con autenticación (recomendado)
+curl -H "Authorization: Bearer YOUR_CRON_SECRET" \
+  https://your-domain.com/api/cron/finish-gps
+```
+
+**Configuración:**
+1. Define `CRON_SECRET` en tus variables de entorno
+2. Configura un cron job externo (Vercel Cron, GitHub Actions, etc.) para llamar al endpoint
+3. Recomendación: Ejecutar cada hora o cada 6 horas
+
+**Servicios de Cron recomendados:**
+- [Vercel Cron Jobs](https://vercel.com/docs/cron-jobs)
+- [GitHub Actions Schedule](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule)
+- [Upstash QStash](https://upstash.com/)
+
 ### Estructura del proyecto
 ```
 src/

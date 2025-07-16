@@ -1,8 +1,9 @@
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { GrandPrix, Prisma, QuestionType } from '@prisma/client'
+import { GrandPrix, Prisma, QuestionType, GPStatus } from '@prisma/client'
 import { formatInTimeZone, fromZonedTime, toZonedTime } from 'date-fns-tz'
 import { addDays, differenceInDays, getHours } from 'date-fns'
+import { sendGPLaunchedNotifications } from './notification-service'
 
 // Lista de zonas horarias válidas para F1
 const VALID_F1_TIMEZONES = [
@@ -465,10 +466,11 @@ export async function getUpcomingGrandPrix(workspaceId: string) {
     return null
   }
   
-  // Obtener el próximo GP (donde la fecha de clasificación aún no ha pasado)
+  // Obtener el próximo GP activo (donde la fecha de clasificación aún no ha pasado)
   const gp = await prisma.grandPrix.findFirst({
     where: {
       seasonId: activeWorkspaceSeason.seasonId,
+      status: 'ACTIVE' as GPStatus, // Solo GPs lanzados
       qualifyingDate: {
         gt: now,
       },
@@ -510,6 +512,9 @@ export async function getPastGrandPrix(workspaceId: string) {
   const grandPrix = await prisma.grandPrix.findMany({
     where: {
       seasonId: activeWorkspaceSeason.seasonId,
+      status: {
+        in: ['ACTIVE', 'FINISHED'] as GPStatus[], // No mostrar GPs pausados o no lanzados
+      },
       raceDate: {
         lt: now,
       },
@@ -688,4 +693,197 @@ export async function getGPById(id: string): Promise<GrandPrixWithDetails | null
   if (!gp) return null
 
   return addFormattedDates(gp)
+}
+
+// Schema para lanzar un GP
+export const launchGrandPrixSchema = z.object({
+  grandPrixId: z.string().cuid(),
+  launchedByUserId: z.string().cuid(),
+  sendNotifications: z.boolean().default(true)
+})
+
+export type LaunchGrandPrixInput = z.infer<typeof launchGrandPrixSchema>
+
+/**
+ * Lanza un Grand Prix cambiando su estado a ACTIVE y enviando notificaciones
+ */
+export async function launchGrandPrix(input: LaunchGrandPrixInput) {
+  const validated = launchGrandPrixSchema.parse(input)
+  
+  // Obtener el GP actual
+  const grandPrix = await prisma.grandPrix.findUnique({
+    where: { id: validated.grandPrixId },
+    include: {
+      gpQuestions: true,
+      season: true
+    }
+  })
+  
+  if (!grandPrix) {
+    throw new Error('Grand Prix no encontrado')
+  }
+  
+  if (grandPrix.status !== 'CREATED') {
+    throw new Error('Solo se pueden lanzar Grand Prix con estado CREATED')
+  }
+  
+  if (grandPrix.gpQuestions.length === 0) {
+    throw new Error('El Grand Prix debe tener preguntas configuradas antes de lanzarlo')
+  }
+  
+  // Verificar que las fechas sean futuras
+  const now = new Date()
+  if (grandPrix.qualifyingDate <= now) {
+    throw new Error('No se puede lanzar un Grand Prix cuya clasificación ya ha comenzado')
+  }
+  
+  // Actualizar el estado del GP
+  const updatedGP = await prisma.grandPrix.update({
+    where: { id: validated.grandPrixId },
+    data: {
+      status: 'ACTIVE' as GPStatus,
+      launchedAt: now
+    },
+    include: {
+      season: true
+    }
+  })
+  
+  // Enviar notificaciones solo si está habilitado
+  if (validated.sendNotifications) {
+    try {
+      await sendGPLaunchedNotifications({
+        grandPrixId: validated.grandPrixId,
+        sentByUserId: validated.launchedByUserId
+      })
+    } catch (error) {
+      console.error('Error enviando notificaciones:', error)
+      // No revertir el cambio de estado si fallan las notificaciones
+      // El GP ya está lanzado y los usuarios pueden acceder
+    }
+  }
+  
+  return updatedGP
+}
+
+/**
+ * Pausa un Grand Prix activo (lo hace invisible para usuarios)
+ */
+export async function pauseGrandPrix(grandPrixId: string) {
+  const grandPrix = await prisma.grandPrix.findUnique({
+    where: { id: grandPrixId }
+  })
+  
+  if (!grandPrix) {
+    throw new Error('Grand Prix no encontrado')
+  }
+  
+  if (grandPrix.status !== 'ACTIVE') {
+    throw new Error('Solo se pueden pausar Grand Prix activos')
+  }
+  
+  return await prisma.grandPrix.update({
+    where: { id: grandPrixId },
+    data: {
+      status: 'PAUSED' as GPStatus
+    }
+  })
+}
+
+/**
+ * Reactiva un Grand Prix pausado
+ */
+export async function resumeGrandPrix(grandPrixId: string) {
+  const grandPrix = await prisma.grandPrix.findUnique({
+    where: { id: grandPrixId }
+  })
+  
+  if (!grandPrix) {
+    throw new Error('Grand Prix no encontrado')
+  }
+  
+  if (grandPrix.status !== 'PAUSED') {
+    throw new Error('Solo se pueden reactivar Grand Prix pausados')
+  }
+  
+  // Verificar que aún no haya pasado el deadline
+  const now = new Date()
+  if (grandPrix.qualifyingDate <= now) {
+    throw new Error('No se puede reactivar un Grand Prix cuyo deadline ya pasó')
+  }
+  
+  return await prisma.grandPrix.update({
+    where: { id: grandPrixId },
+    data: {
+      status: 'ACTIVE' as GPStatus
+    }
+  })
+}
+
+/**
+ * Finaliza un Grand Prix cambiando su estado a FINISHED
+ */
+export async function finishGrandPrix(grandPrixId: string, force: boolean = false) {
+  const grandPrix = await prisma.grandPrix.findUnique({
+    where: { id: grandPrixId }
+  })
+  
+  if (!grandPrix) {
+    throw new Error('Grand Prix no encontrado')
+  }
+  
+  if (grandPrix.status === 'FINISHED') {
+    throw new Error('El Grand Prix ya está finalizado')
+  }
+  
+  if (grandPrix.status !== 'ACTIVE' && grandPrix.status !== 'PAUSED') {
+    throw new Error('Solo se pueden finalizar Grand Prix activos o pausados')
+  }
+  
+  // Verificar que la carrera haya terminado (a menos que se fuerce)
+  const now = new Date()
+  if (!force && grandPrix.raceDate > now) {
+    throw new Error('No se puede finalizar un Grand Prix que aún no ha terminado. Usa force=true para forzar.')
+  }
+  
+  return await prisma.grandPrix.update({
+    where: { id: grandPrixId },
+    data: {
+      status: 'FINISHED' as GPStatus
+    }
+  })
+}
+
+/**
+ * Verifica y actualiza automáticamente los GPs que deberían estar finalizados
+ */
+export async function updateFinishedGrandPrix() {
+  const now = new Date()
+  
+  // Buscar GPs activos o pausados cuya carrera ya terminó
+  const grandPrixToFinish = await prisma.grandPrix.findMany({
+    where: {
+      status: {
+        in: ['ACTIVE', 'PAUSED'] as GPStatus[]
+      },
+      raceDate: {
+        lt: now
+      }
+    }
+  })
+  
+  // Actualizar cada uno a FINISHED
+  const updates = await Promise.all(
+    grandPrixToFinish.map(gp => 
+      prisma.grandPrix.update({
+        where: { id: gp.id },
+        data: { status: 'FINISHED' as GPStatus }
+      })
+    )
+  )
+  
+  return {
+    count: updates.length,
+    updated: updates
+  }
 }

@@ -10,10 +10,18 @@ import {
   HelpCircle,
   MapPin,
   Trophy,
-  Users
+  Users,
+  Rocket,
+  CheckCircle2,
+  Circle,
+  Pause
 } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { LaunchGPButton } from '../launch-gp-button'
+import { SendRemindersSection } from '../send-reminders-section'
+import { SendLaunchNotificationsButton } from '../send-launch-notifications-button'
+import { GPStatusControls } from '../gp-status-controls'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,9 +37,6 @@ export default async function GrandPrixDetailPage({ params }: GrandPrixDetailPag
     notFound()
   }
 
-  const now = new Date()
-  const hasStarted = new Date(grandPrix.qualifyingDate) < now
-  const hasEnded = new Date(grandPrix.raceDate) < now
 
   return (
     <div className="space-y-6">
@@ -100,9 +105,32 @@ export default async function GrandPrixDetailPage({ params }: GrandPrixDetailPag
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Estado</span>
-              <Badge variant={hasEnded ? "secondary" : hasStarted ? "default" : "outline"}>
-                {hasEnded ? "Finalizado" : hasStarted ? "En progreso" : "Próximo"}
-              </Badge>
+              <div className="flex items-center gap-2">
+                {grandPrix.status === 'CREATED' && (
+                  <Badge variant="secondary" className="gap-1">
+                    <Circle className="h-3 w-3" />
+                    Creado
+                  </Badge>
+                )}
+                {grandPrix.status === 'ACTIVE' && (
+                  <Badge variant="default" className="gap-1">
+                    <Rocket className="h-3 w-3" />
+                    Activo
+                  </Badge>
+                )}
+                {grandPrix.status === 'PAUSED' && (
+                  <Badge variant="destructive" className="gap-1">
+                    <Pause className="h-3 w-3" />
+                    Pausado
+                  </Badge>
+                )}
+                {grandPrix.status === 'FINISHED' && (
+                  <Badge variant="outline" className="gap-1">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Finalizado
+                  </Badge>
+                )}
+              </div>
             </div>
             
             <div className="flex items-center justify-between">
@@ -122,6 +150,76 @@ export default async function GrandPrixDetailPage({ params }: GrandPrixDetailPag
           </CardContent>
         </Card>
       </div>
+
+      {/* Control de Estado */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Control de Estado</CardTitle>
+          <CardDescription>
+            {grandPrix.status === 'CREATED' && 'El Grand Prix está creado pero aún no está disponible para los competidores'}
+            {grandPrix.status === 'ACTIVE' && 'El Grand Prix está activo y abierto para predicciones'}
+            {grandPrix.status === 'PAUSED' && 'El Grand Prix está pausado temporalmente'}
+            {grandPrix.status === 'FINISHED' && 'El Grand Prix ha finalizado'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {grandPrix.status === 'CREATED' && (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Para que los competidores puedan realizar predicciones, debes lanzar el Grand Prix.
+                  Asegúrate de que todas las preguntas estén configuradas antes de lanzar.
+                </p>
+                <LaunchGPButton grandPrix={grandPrix} />
+              </>
+            )}
+            
+            {(grandPrix.status === 'ACTIVE' || grandPrix.status === 'PAUSED') && (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  {grandPrix.status === 'ACTIVE' 
+                    ? 'Puedes pausar temporalmente el GP o finalizarlo cuando termine la carrera.'
+                    : 'El GP está pausado. Puedes reactivarlo o finalizarlo definitivamente.'}
+                </p>
+                <GPStatusControls grandPrix={grandPrix} />
+              </>
+            )}
+            
+            {grandPrix.status === 'FINISHED' && (
+              <p className="text-sm text-muted-foreground">
+                El Grand Prix ha finalizado. No se pueden realizar más predicciones.
+                Puedes proceder a ingresar los resultados oficiales y procesar la puntuación.
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Botón para enviar notificaciones si no se enviaron al lanzar */}
+      {grandPrix.status === 'ACTIVE' && !grandPrix.notificationsSent && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Notificaciones Pendientes</CardTitle>
+            <CardDescription>
+              El Grand Prix fue lanzado sin enviar notificaciones
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Los usuarios aún no han sido notificados sobre este Grand Prix. 
+                Puedes enviar las notificaciones ahora.
+              </p>
+              <SendLaunchNotificationsButton grandPrix={grandPrix} />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Envío de Recordatorios */}
+      {grandPrix.status === 'ACTIVE' && !grandPrix.isDeadlinePassed && (
+        <SendRemindersSection grandPrix={grandPrix} />
+      )}
 
       {/* Acciones Rápidas */}
       <Card>

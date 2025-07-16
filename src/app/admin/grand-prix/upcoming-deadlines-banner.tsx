@@ -43,7 +43,12 @@ export function UpcomingDeadlinesBanner({ grandPrix }: UpcomingDeadlinesBannerPr
               <div key={gp.id} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Clock className="h-3 w-3" />
-                  <span className="font-medium">{gp.name}</span>
+                  <Link 
+                    href={`/admin/grand-prix/${gp.id}`}
+                    className="font-medium hover:underline"
+                  >
+                    {gp.name}
+                  </Link>
                   <span className="text-sm text-muted-foreground">
                     - Cierra en {timeRemaining}
                   </span>

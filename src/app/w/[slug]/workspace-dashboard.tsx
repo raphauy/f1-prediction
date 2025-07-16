@@ -33,7 +33,8 @@ export async function WorkspaceDashboard({ slug }: WorkspaceDashboardProps) {
   const dashboardData = await getDashboardData(slug)
   const { 
     activeSeason, 
-    nextGP, 
+    nextGP,
+    isGPActive,
     topStandings,
     globalStandings, 
     userPosition, 
@@ -59,7 +60,8 @@ export async function WorkspaceDashboard({ slug }: WorkspaceDashboardProps) {
 
       {/* Próximo GP */}
       <NextGPCard 
-        grandPrix={nextGP} 
+        grandPrix={nextGP}
+        isGPActive={!!isGPActive}
         hasUserPredicted={hasUserPredicted}
         userPredictionInfo={userPredictionInfo}
         workspaceSlug={slug}

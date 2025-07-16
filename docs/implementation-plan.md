@@ -107,15 +107,16 @@
 ### Phase 6: Notifications & Email System
 **Dependencies:** Phase 5 completion  
 **Estimated Duration:** 3-4 days
+**Status:** PARTIALLY COMPLETED
 
 **Tasks:**
-- [ ] Create email templates for prediction reminders
+- [x] Create email templates for GP launch and reminders
 - [ ] Build result announcement email templates
-- [ ] Implement deadline reminder scheduling
-- [ ] Add notification preferences management
-- [ ] Create email queue system for bulk sending
-- [ ] Implement unsubscribe functionality
-- [ ] Add in-app notification indicators
+- [x] Implement manual GP launch with email notifications
+- [x] Add notification preferences management
+- [x] Create manual reminder sending system
+- [x] Implement notification preferences in user profile
+- [x] Add in-app notification indicators (new GP badge)
 - [ ] Build email preview and testing tools
 
 **Acceptance Criteria:**

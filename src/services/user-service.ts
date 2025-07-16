@@ -14,7 +14,11 @@ export const createUserSchema = z.object({
   role: z.nativeEnum(Role).nullable().optional() // Solo para superadmins
 })
 
-export const updateUserSchema = createUserSchema.partial()
+export const updateUserSchema = createUserSchema.partial().extend({
+  notifyGPLaunched: z.boolean().optional(),
+  notifyReminders: z.boolean().optional(),
+  notifyResults: z.boolean().optional()
+})
 
 // Tipos derivados de schemas
 export type CreateUserData = z.infer<typeof createUserSchema>

@@ -20,6 +20,11 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
+  // Preferencias de notificaciones
+  notifyGPLaunched  Boolean @default(true) // Notificar cuando se lanza un GP
+  notifyReminders   Boolean @default(true) // Notificar recordatorios
+  notifyResults     Boolean @default(true) // Notificar cuando hay resultados
+  
   // Relación con tokens OTP
   otpTokens OtpToken[]
   
@@ -174,6 +179,9 @@ model GrandPrix {
   timezone          String   // "Australia/Melbourne"
   focusPilot        String?  // Nombre del piloto en el foco
   focusPilotContext String?  // Contexto o razón de la selección
+  status            GPStatus @default(CREATED) // Estado del GP
+  launchedAt        DateTime? // Fecha cuando se lanzó el GP
+  notificationsSent Boolean  @default(false) // Si se enviaron notificaciones de lanzamiento
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   
@@ -184,6 +192,7 @@ model GrandPrix {
   officialResults OfficialResult[]
   
   @@index([seasonId, round])
+  @@index([status])
   @@map("grand_prix")
 }
 
@@ -300,6 +309,8 @@ enum ActivityType {
   results_published
   member_joined
   member_left
+  gp_launched
+  reminder_sent
 }
 
 model PredictionPoints {
@@ -374,4 +385,12 @@ model OfficialResult {
   
   @@index([grandPrixId])
   @@map("official_results")
+}
+
+// Enum para estados de Grand Prix
+enum GPStatus {
+  CREATED   // GP creado pero no lanzado
+  ACTIVE    // GP lanzado y abierto para predicciones
+  PAUSED    // GP pausado temporalmente (no visible para usuarios)
+  FINISHED  // GP finalizado
 }

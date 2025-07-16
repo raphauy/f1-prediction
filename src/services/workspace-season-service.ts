@@ -92,9 +92,39 @@ export async function getWorkspaceSeasonWithDetails(
 }
 
 /**
- * Obtiene el próximo Grand Prix con deadline abierto
+ * Obtiene el próximo Grand Prix con deadline abierto y estado ACTIVE
  */
 export async function getNextGrandPrixForWorkspace(workspaceId: string) {
+  const activeSeason = await getActiveSeasonForWorkspace(workspaceId)
+  if (!activeSeason) return null
+
+  const now = new Date()
+  
+  return await prisma.grandPrix.findFirst({
+    where: {
+      seasonId: activeSeason.seasonId,
+      status: 'ACTIVE', // Solo GPs lanzados
+      qualifyingDate: {
+        gt: now
+      }
+    },
+    orderBy: {
+      qualifyingDate: 'asc'
+    },
+    include: {
+      _count: {
+        select: {
+          gpQuestions: true
+        }
+      }
+    }
+  })
+}
+
+/**
+ * Obtiene el próximo Grand Prix sin importar su estado (para mostrar en dashboard)
+ */
+export async function getNextGrandPrix(workspaceId: string) {
   const activeSeason = await getActiveSeasonForWorkspace(workspaceId)
   if (!activeSeason) return null
 

@@ -17,10 +17,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
 import { GrandPrixActionsClient } from './grand-prix-actions-client'
 import type { GrandPrixWithDetails } from '@/services/grand-prix-service'
-import { Clock, MapPin, Flag } from 'lucide-react'
+import { MapPin, Rocket, CheckCircle2, Circle, MailX, Pause, Search, X } from 'lucide-react'
+import Link from 'next/link'
 import { DeadlineDisplay } from './deadline-display'
+import { DateDisplay } from './date-display'
+import { GPStatus } from '@prisma/client'
 
 interface GrandPrixTableClientProps {
   grandPrix: GrandPrixWithDetails[]
@@ -29,14 +33,66 @@ interface GrandPrixTableClientProps {
 
 export function GrandPrixTableClient({ grandPrix, seasons }: GrandPrixTableClientProps) {
   const [selectedSeason, setSelectedSeason] = useState<string>('all')
+  const [selectedStatus, setSelectedStatus] = useState<string>('all')
+  const [searchQuery, setSearchQuery] = useState<string>('')
   
-  const filteredGrandPrix = selectedSeason === 'all' 
+  // Aplicar filtros en orden: temporada, estado, búsqueda
+  let filteredGrandPrix = selectedSeason === 'all' 
     ? grandPrix 
     : grandPrix.filter(gp => gp.seasonId === selectedSeason)
+    
+  // Filtrar por estado
+  if (selectedStatus !== 'all') {
+    filteredGrandPrix = filteredGrandPrix.filter(gp => gp.status === selectedStatus)
+  }
+  
+  // Filtrar por búsqueda (nombre o circuito)
+  if (searchQuery) {
+    const query = searchQuery.toLowerCase()
+    filteredGrandPrix = filteredGrandPrix.filter(gp => 
+      gp.name.toLowerCase().includes(query) ||
+      gp.circuit.toLowerCase().includes(query) ||
+      gp.location.toLowerCase().includes(query)
+    )
+  }
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4">
+        {/* Buscador */}
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nombre o circuito..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 pr-9"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+        
+        {/* Filtro por estado */}
+        <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filtrar por estado" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los estados</SelectItem>
+            <SelectItem value={GPStatus.CREATED}>Abierto</SelectItem>
+            <SelectItem value={GPStatus.ACTIVE}>Activo</SelectItem>
+            <SelectItem value={GPStatus.PAUSED}>Pausado</SelectItem>
+            <SelectItem value={GPStatus.FINISHED}>Finalizado</SelectItem>
+          </SelectContent>
+        </Select>
+        
+        {/* Filtro por temporada */}
         <Select value={selectedSeason} onValueChange={setSelectedSeason}>
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder="Filtrar por temporada" />
@@ -81,7 +137,12 @@ export function GrandPrixTableClient({ grandPrix, seasons }: GrandPrixTableClien
                   </TableCell>
                   <TableCell>
                     <div className="space-y-1">
-                      <div className="font-medium">{gp.name}</div>
+                      <Link 
+                        href={`/admin/grand-prix/${gp.id}`}
+                        className="font-medium hover:underline"
+                      >
+                        {gp.name}
+                      </Link>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <MapPin className="h-3 w-3" />
                         <span>{gp.location}, {gp.country}</span>
@@ -89,45 +150,64 @@ export function GrandPrixTableClient({ grandPrix, seasons }: GrandPrixTableClien
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1 text-sm">
-                        <Clock className="h-3 w-3" />
-                        {gp.formattedDates?.qualifyingLocal && (
-                          <span>{gp.formattedDates.qualifyingLocal.split(' ').slice(0, 3).join(' ')}</span>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {gp.formattedDates?.qualifyingLocal && (
-                          <span>{gp.formattedDates.qualifyingLocal.split(' ').slice(3).join(' ')}</span>
-                        )}
-                      </div>
-                    </div>
+                    <DateDisplay 
+                      date={gp.qualifyingDate} 
+                      gpTimezone={gp.timezone}
+                      showIcon={true}
+                    />
                   </TableCell>
                   <TableCell>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1 text-sm">
-                        <Flag className="h-3 w-3" />
-                        {gp.formattedDates?.raceLocal && (
-                          <span>{gp.formattedDates.raceLocal.split(' ').slice(0, 3).join(' ')}</span>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {gp.formattedDates?.raceLocal && (
-                          <span>{gp.formattedDates.raceLocal.split(' ').slice(3).join(' ')}</span>
-                        )}
-                      </div>
-                    </div>
+                    <DateDisplay 
+                      date={gp.raceDate} 
+                      gpTimezone={gp.timezone}
+                      showIcon={true}
+                    />
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">
-                      <DeadlineDisplay 
-                        deadline={new Date(gp.qualifyingDate)} 
-                        showTimeRemaining={true}
-                      />
+                      {/* Solo mostrar badge Creado si NO se va a mostrar el badge Abierto */}
+                      {gp.status === 'CREATED' && gp.isDeadlinePassed && (
+                        <Badge variant="secondary" className="gap-1">
+                          <Circle className="h-3 w-3" />
+                          Creado
+                        </Badge>
+                      )}
+                      {gp.status === 'ACTIVE' && (
+                        <div className="flex flex-col gap-1">
+                          <Badge variant="default" className="gap-1">
+                            <Rocket className="h-3 w-3" />
+                            Activo
+                          </Badge>
+                          {!gp.notificationsSent && (
+                            <Badge variant="destructive" className="gap-1 text-xs">
+                              <MailX className="h-3 w-3" />
+                              Sin notificar
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                      {gp.status === 'PAUSED' && (
+                        <Badge variant="destructive" className="gap-1">
+                          <Pause className="h-3 w-3" />
+                          Pausado
+                        </Badge>
+                      )}
+                      {gp.status === 'FINISHED' && (
+                        <Badge variant="outline" className="gap-1">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Finalizado
+                        </Badge>
+                      )}
                       {gp.isSprint && (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs border-purple-500 text-purple-700 dark:text-purple-400">
                           Sprint
                         </Badge>
+                      )}
+                      {!gp.isDeadlinePassed && gp.status !== 'FINISHED' && (
+                        <DeadlineDisplay 
+                          deadline={new Date(gp.qualifyingDate)} 
+                          showTimeRemaining={true}
+                        />
                       )}
                     </div>
                   </TableCell>

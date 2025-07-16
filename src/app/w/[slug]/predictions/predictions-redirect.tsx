@@ -64,9 +64,12 @@ export async function PredictionsRedirect({ slug }: PredictionsRedirectProps) {
       <div className="container mx-auto px-4 py-8 max-w-2xl">
         <Card>
           <CardHeader>
-            <CardTitle>No hay GP activo para predicciones</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              No hay Grand Prix listo para predicciones
+            </CardTitle>
             <CardDescription>
-              El próximo Grand Prix aún no está disponible para predicciones o ya pasó el deadline
+              El próximo Grand Prix aún no ha sido lanzado por el administrador o ya cerró el periodo de predicciones
             </CardDescription>
           </CardHeader>
           <CardContent>

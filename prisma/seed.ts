@@ -1,8 +1,14 @@
-import { PrismaClient, Role, WorkspaceRole, QuestionType, QuestionCategory } from '@prisma/client'
+import { PrismaClient, Role, WorkspaceRole, QuestionType, QuestionCategory, GPStatus } from '@prisma/client'
 import { DRIVER_NAMES } from '../src/lib/constants/drivers'
 import { TEAM_NAMES } from '../src/lib/constants/teams'
+import { fromZonedTime } from 'date-fns-tz'
 
 const prisma = new PrismaClient()
+
+// Función para convertir hora local a UTC (copiada de grand-prix-service.ts)
+function convertLocalDateToUTC(localDate: Date, timezone: string): Date {
+  return fromZonedTime(localDate, timezone)
+}
 
 async function main() {
   // Crear superadmin
@@ -13,7 +19,7 @@ async function main() {
     },
     create: {
       email: 'rapha.uy@rapha.uy',
-      name: 'Super Admin',
+      name: 'Raphael',
       role: Role.superadmin,
     },
   })
@@ -22,12 +28,12 @@ async function main() {
 
   // Crear workspace de ejemplo
   const workspace = await prisma.workspace.upsert({
-    where: { slug: 'default' },
+    where: { slug: 'default-game' },
     update: {},
     create: {
-      name: 'Default Workspace',
-      slug: 'default',
-      description: 'Workspace por defecto del sistema',
+      name: 'Default Game',
+      slug: 'default-game',
+      description: 'Juego por defecto del sistema',
     },
   })
 
@@ -51,13 +57,46 @@ async function main() {
 
   console.log('Superadmin added to default workspace')
 
-  // Crear usuario normal de ejemplo
-  const normalUser = await prisma.user.upsert({
-    where: { email: 'user@example.com' },
+  // Crear segundo superadmin - Alejandro Soto
+  const superadmin2 = await prisma.user.upsert({
+    where: { email: 'alesotohof@gmail.com' },
+    update: {
+      role: Role.superadmin,
+    },
+    create: {
+      email: 'alesotohof@gmail.com',
+      name: 'Alejandro Soto',
+      role: Role.superadmin,
+    },
+  })
+
+  console.log('Segundo superadmin creado:', superadmin2)
+
+  // Agregar segundo superadmin al workspace como admin
+  await prisma.workspaceUser.upsert({
+    where: {
+      userId_workspaceId: {
+        userId: superadmin2.id,
+        workspaceId: workspace.id,
+      },
+    },
     update: {},
     create: {
-      email: 'user@example.com',
-      name: 'Usuario Normal',
+      userId: superadmin2.id,
+      workspaceId: workspace.id,
+      role: WorkspaceRole.admin,
+    },
+  })
+
+  console.log('Segundo superadmin agregado al workspace')
+
+  // Crear usuario normal de ejemplo
+  const normalUser = await prisma.user.upsert({
+    where: { email: 'fabio@rapha.uy' },
+    update: {},
+    create: {
+      email: 'fabio@rapha.uy',
+      name: 'Fabio',
       // Sin rol de sistema - es un usuario normal
     },
   })
@@ -145,9 +184,84 @@ async function main() {
     { round: 24, name: 'Abu Dhabi Grand Prix', location: 'Abu Dhabi', country: 'United Arab Emirates', circuit: 'Yas Marina Circuit', raceDate: '2025-12-07', qualifyingDate: '2025-12-06', isSprint: false, timezone: 'Asia/Dubai' },
   ]
 
+  // Horarios típicos de F1 (hora local del circuito)
+  const typicalSchedule = {
+    qualifying: { hour: 15, minute: 0 }, // 15:00 (3 PM)
+    race: { hour: 14, minute: 0 },       // 14:00 (2 PM)
+    sprintQualifying: { hour: 16, minute: 30 }, // 16:30 para sprints
+    sprintRace: { hour: 15, minute: 0 },       // 15:00 para carreras sprint
+  }
+
+  // Casos especiales
+  const specialCases: Record<string, { qualifying: { hour: number, minute: number }, race: { hour: number, minute: number } }> = {
+    'Las Vegas': { 
+      qualifying: { hour: 22, minute: 0 }, // 22:00 (10 PM)
+      race: { hour: 22, minute: 0 }        // 22:00 (10 PM)
+    },
+    'Singapore': {
+      qualifying: { hour: 20, minute: 0 }, // 20:00 (8 PM)
+      race: { hour: 20, minute: 0 }        // 20:00 (8 PM)
+    },
+    'Abu Dhabi': {
+      qualifying: { hour: 17, minute: 0 }, // 17:00 (5 PM)
+      race: { hour: 17, minute: 0 }        // 17:00 (5 PM)
+    },
+    'Bahrain': {
+      qualifying: { hour: 18, minute: 0 }, // 18:00 (6 PM)
+      race: { hour: 18, minute: 0 }        // 18:00 (6 PM)
+    },
+    'Saudi Arabian': {
+      qualifying: { hour: 20, minute: 0 }, // 20:00 (8 PM)
+      race: { hour: 20, minute: 0 }        // 20:00 (8 PM)
+    },
+    'Qatar': {
+      qualifying: { hour: 19, minute: 0 }, // 19:00 (7 PM)
+      race: { hour: 18, minute: 0 }        // 18:00 (6 PM)
+    }
+  }
+
   // Crear todos los Grand Prix
   const grandPrixList = []
   for (const gp of grandPrixData) {
+    // Determinar el horario a usar
+    let schedule = gp.isSprint 
+      ? { qualifying: typicalSchedule.sprintQualifying, race: typicalSchedule.sprintRace }
+      : { qualifying: typicalSchedule.qualifying, race: typicalSchedule.race }
+
+    // Verificar si es un caso especial
+    for (const [key, specialSchedule] of Object.entries(specialCases)) {
+      if (gp.name.includes(key)) {
+        schedule = specialSchedule
+        break
+      }
+    }
+
+    // Crear las fechas con las horas correctas en la zona horaria local del GP
+    const qualifyingLocal = new Date(gp.qualifyingDate)
+    qualifyingLocal.setHours(schedule.qualifying.hour, schedule.qualifying.minute, 0, 0)
+
+    const raceLocal = new Date(gp.raceDate)
+    raceLocal.setHours(schedule.race.hour, schedule.race.minute, 0, 0)
+
+    // Convertir a UTC usando la zona horaria del GP
+    const qualifyingUTC = convertLocalDateToUTC(qualifyingLocal, gp.timezone)
+    const raceUTC = convertLocalDateToUTC(raceLocal, gp.timezone)
+
+    // Determinar el estado del GP basándonos en la fecha actual
+    const now = new Date()
+    let status: GPStatus = 'CREATED'
+    
+    if (raceUTC < now) {
+      // Si la carrera ya pasó, marcar como FINISHED
+      status = 'FINISHED'
+    } else if (gp.round <= 13) {
+      // Los primeros 13 GPs (hasta Belgian GP en julio) podrían estar activos
+      // Depende de la lógica de negocio, pero vamos a marcar algunos como ACTIVE
+      if (gp.round >= 11 && gp.round <= 13) {
+        status = 'ACTIVE' // Austrian, British y Belgian GPs para julio
+      }
+    }
+    
     const grandPrix = await prisma.grandPrix.create({
       data: {
         seasonId: season2025.id,
@@ -156,10 +270,13 @@ async function main() {
         location: gp.location,
         country: gp.country,
         circuit: gp.circuit,
-        raceDate: new Date(gp.raceDate),
-        qualifyingDate: new Date(gp.qualifyingDate),
+        raceDate: raceUTC,
+        qualifyingDate: qualifyingUTC,
         isSprint: gp.isSprint,
         timezone: gp.timezone,
+        status: status,
+        launchedAt: status === 'ACTIVE' ? now : null,
+        notificationsSent: status === 'ACTIVE' ? true : false
       },
     })
     grandPrixList.push(grandPrix)

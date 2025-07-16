@@ -10,7 +10,12 @@ import {
   CreateGrandPrixData,
   UpdateGrandPrixData,
   convertLocalDateToUTC,
+  launchGrandPrix,
+  finishGrandPrix,
+  pauseGrandPrix,
+  resumeGrandPrix
 } from '@/services/grand-prix-service'
+import { sendGPReminders, sendGPLaunchedNotifications } from '@/services/notification-service'
 import { z } from 'zod'
 
 // Schema para el formulario con fechas locales
@@ -158,5 +163,176 @@ export async function deleteGrandPrixAction(id: string) {
       return { success: false, error: error.message }
     }
     return { success: false, error: 'Error al eliminar el Grand Prix' }
+  }
+}
+
+export async function launchGrandPrixAction(grandPrixId: string, sendNotifications: boolean = true) {
+  const session = await auth()
+  if (!session?.user || session.user.role !== 'superadmin') {
+    return { success: false, error: 'No autorizado' }
+  }
+
+  try {
+    await launchGrandPrix({
+      grandPrixId,
+      launchedByUserId: session.user.id,
+      sendNotifications
+    })
+    
+    revalidatePath('/admin/grand-prix')
+    revalidatePath(`/admin/grand-prix/${grandPrixId}`)
+    
+    const message = sendNotifications 
+      ? 'Grand Prix lanzado exitosamente. Las notificaciones se están enviando.'
+      : 'Grand Prix lanzado exitosamente. No se enviaron notificaciones.'
+    
+    return { 
+      success: true, 
+      message
+    }
+  } catch (error) {
+    console.error('Error al lanzar GP:', error)
+    if (error instanceof Error) {
+      return { success: false, error: error.message }
+    }
+    return { success: false, error: 'Error al lanzar el Grand Prix' }
+  }
+}
+
+export async function sendGPRemindersAction(grandPrixId: string, customMessage?: string) {
+  const session = await auth()
+  if (!session?.user || session.user.role !== 'superadmin') {
+    return { success: false, error: 'No autorizado' }
+  }
+
+  try {
+    const result = await sendGPReminders({
+      grandPrixId,
+      sentByUserId: session.user.id,
+      customMessage
+    })
+    
+    revalidatePath('/admin/grand-prix')
+    revalidatePath(`/admin/grand-prix/${grandPrixId}`)
+    
+    return { 
+      success: true, 
+      message: `Recordatorios enviados: ${result.sentCount} de ${result.totalUsers} usuarios`,
+      details: result
+    }
+  } catch (error) {
+    console.error('Error al enviar recordatorios:', error)
+    if (error instanceof Error) {
+      return { success: false, error: error.message }
+    }
+    return { success: false, error: 'Error al enviar recordatorios' }
+  }
+}
+
+export async function finishGrandPrixAction(grandPrixId: string) {
+  const session = await auth()
+  if (!session?.user || session.user.role !== 'superadmin') {
+    return { success: false, error: 'No autorizado' }
+  }
+
+  try {
+    await finishGrandPrix(grandPrixId)
+    
+    revalidatePath('/admin/grand-prix')
+    revalidatePath(`/admin/grand-prix/${grandPrixId}`)
+    
+    return { 
+      success: true, 
+      message: 'Grand Prix finalizado exitosamente'
+    }
+  } catch (error) {
+    console.error('Error al finalizar GP:', error)
+    if (error instanceof Error) {
+      return { success: false, error: error.message }
+    }
+    return { success: false, error: 'Error al finalizar el Grand Prix' }
+  }
+}
+
+export async function sendLaunchNotificationsAction(grandPrixId: string) {
+  const session = await auth()
+  if (!session?.user || session.user.role !== 'superadmin') {
+    return { success: false, error: 'No autorizado' }
+  }
+
+  try {
+    const result = await sendGPLaunchedNotifications({
+      grandPrixId,
+      sentByUserId: session.user.id
+    })
+    
+    revalidatePath('/admin/grand-prix')
+    revalidatePath(`/admin/grand-prix/${grandPrixId}`)
+    
+    return { 
+      success: result.success,
+      message: result.message,
+      details: {
+        sentCount: result.sentCount,
+        totalUsers: result.totalUsers,
+        errors: result.errors
+      }
+    }
+  } catch (error) {
+    console.error('Error al enviar notificaciones de lanzamiento:', error)
+    if (error instanceof Error) {
+      return { success: false, error: error.message }
+    }
+    return { success: false, error: 'Error al enviar notificaciones' }
+  }
+}
+
+export async function pauseGrandPrixAction(grandPrixId: string) {
+  const session = await auth()
+  if (!session?.user || session.user.role !== 'superadmin') {
+    return { success: false, error: 'No autorizado' }
+  }
+
+  try {
+    await pauseGrandPrix(grandPrixId)
+    
+    revalidatePath('/admin/grand-prix')
+    revalidatePath(`/admin/grand-prix/${grandPrixId}`)
+    
+    return { 
+      success: true, 
+      message: 'Grand Prix pausado exitosamente'
+    }
+  } catch (error) {
+    console.error('Error al pausar GP:', error)
+    if (error instanceof Error) {
+      return { success: false, error: error.message }
+    }
+    return { success: false, error: 'Error al pausar el Grand Prix' }
+  }
+}
+
+export async function resumeGrandPrixAction(grandPrixId: string) {
+  const session = await auth()
+  if (!session?.user || session.user.role !== 'superadmin') {
+    return { success: false, error: 'No autorizado' }
+  }
+
+  try {
+    await resumeGrandPrix(grandPrixId)
+    
+    revalidatePath('/admin/grand-prix')
+    revalidatePath(`/admin/grand-prix/${grandPrixId}`)
+    
+    return { 
+      success: true, 
+      message: 'Grand Prix reactivado exitosamente'
+    }
+  } catch (error) {
+    console.error('Error al reactivar GP:', error)
+    if (error instanceof Error) {
+      return { success: false, error: error.message }
+    }
+    return { success: false, error: 'Error al reactivar el Grand Prix' }
   }
 }
