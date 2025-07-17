@@ -12,11 +12,12 @@ export async function GET(request: Request) {
     if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
+    console.log("Updating finished GPs")
     
     // Actualizar GPs finalizados
     const result = await updateFinishedGrandPrix()
     
-    return NextResponse.json({
+    const response = {
       success: true,
       message: `${result.count} Grand Prix actualizados a estado FINISHED`,
       updated: result.updated.map(gp => ({
@@ -24,7 +25,9 @@ export async function GET(request: Request) {
         name: gp.name,
         raceDate: gp.raceDate
       }))
-    })
+    }
+    console.log("Response", response)
+    return NextResponse.json(response)
   } catch (error) {
     console.error('Error actualizando GPs finalizados:', error)
     return NextResponse.json(
