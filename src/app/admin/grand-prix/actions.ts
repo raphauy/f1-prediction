@@ -9,7 +9,6 @@ import {
   deleteGrandPrix,
   CreateGrandPrixData,
   UpdateGrandPrixData,
-  convertLocalDateToUTC,
   launchGrandPrix,
   finishGrandPrix,
   pauseGrandPrix,
@@ -17,8 +16,9 @@ import {
 } from '@/services/grand-prix-service'
 import { sendGPReminders, sendGPLaunchedNotifications } from '@/services/notification-service'
 import { z } from 'zod'
+import { fromZonedTime } from 'date-fns-tz'
 
-// Schema para el formulario con fechas locales
+// Schema para el formulario con fechas locales (datetime-local input)
 const grandPrixFormSchema = z.object({
   seasonId: z.string().cuid(),
   round: z.coerce.number().int().min(1).max(30),
@@ -26,12 +26,11 @@ const grandPrixFormSchema = z.object({
   location: z.string().min(1).max(100),
   country: z.string().min(1).max(100),
   circuit: z.string().min(1).max(100),
-  raceDate: z.string().min(1),
-  raceTime: z.string().min(1),
-  qualifyingDate: z.string().min(1),
-  qualifyingTime: z.string().min(1),
+  raceDateTime: z.string().min(1), // Input datetime-local en hora del usuario
+  qualifyingDateTime: z.string().min(1), // Input datetime-local en hora del usuario
   isSprint: z.boolean().default(false),
-  timezone: z.string().min(1),
+  timezone: z.string().min(1), // Zona horaria del circuito
+  userTimezone: z.string().min(1).optional(), // Zona horaria del navegador del usuario
 })
 
 export async function createGrandPrixAction(formData: FormData) {
@@ -50,23 +49,38 @@ export async function createGrandPrixAction(formData: FormData) {
       location: formData.get('location'),
       country: formData.get('country'),
       circuit: formData.get('circuit'),
-      raceDate: formData.get('raceDate'),
-      raceTime: formData.get('raceTime'),
-      qualifyingDate: formData.get('qualifyingDate'),
-      qualifyingTime: formData.get('qualifyingTime'),
+      raceDateTime: formData.get('raceDateTime'),
+      qualifyingDateTime: formData.get('qualifyingDateTime'),
       isSprint: formData.get('isSprint') === 'true',
       timezone: formData.get('timezone'),
+      userTimezone: formData.get('userTimezone') as string,
     })
 
-    // Combinar fecha y hora locales
-    const raceLocalDateTime = new Date(`${data.raceDate}T${data.raceTime}:00`)
-    const qualifyingLocalDateTime = new Date(`${data.qualifyingDate}T${data.qualifyingTime}:00`)
+    // Convertir las fechas de la zona horaria del usuario a UTC
+    // Si no tenemos la zona del usuario, usar 'America/Montevideo' como default
+    const userTz = data.userTimezone || 'America/Montevideo'
+    
+    // fromZonedTime convierte una fecha en zona horaria específica a UTC
+    // Primero parseamos la fecha como si fuera en la zona del usuario
+    const raceDateLocal = new Date(data.raceDateTime)
+    const qualifyingDateLocal = new Date(data.qualifyingDateTime)
+    
+    // fromZonedTime interpreta la fecha como si estuviera en userTz y la convierte a UTC
+    const raceDate = fromZonedTime(raceDateLocal, userTz)
+    const qualifyingDate = fromZonedTime(qualifyingDateLocal, userTz)
 
-    // Convertir a UTC para almacenamiento
+    // Crear datos para el servicio con fechas ya en UTC
     const grandPrixData: CreateGrandPrixData = {
-      ...data,
-      raceDate: convertLocalDateToUTC(raceLocalDateTime, data.timezone),
-      qualifyingDate: convertLocalDateToUTC(qualifyingLocalDateTime, data.timezone),
+      seasonId: data.seasonId,
+      round: data.round,
+      name: data.name,
+      location: data.location,
+      country: data.country,
+      circuit: data.circuit,
+      raceDate,
+      qualifyingDate,
+      isSprint: data.isSprint,
+      timezone: data.timezone, // Zona horaria del circuito para referencia
     }
 
     await createGrandPrix(grandPrixData)
@@ -75,7 +89,9 @@ export async function createGrandPrixAction(formData: FormData) {
     shouldRedirect = true
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return { success: false, error: 'Datos inválidos' }
+      // Mostrar detalles específicos del error de validación
+      const fieldErrors = error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
+      return { success: false, error: `Datos inválidos: ${fieldErrors}` }
     }
     if (error instanceof Error) {
       return { success: false, error: error.message }
@@ -104,29 +120,35 @@ export async function updateGrandPrixAction(id: string, formData: FormData) {
       location: formData.get('location'),
       country: formData.get('country'),
       circuit: formData.get('circuit'),
-      raceDate: formData.get('raceDate'),
-      raceTime: formData.get('raceTime'),
-      qualifyingDate: formData.get('qualifyingDate'),
-      qualifyingTime: formData.get('qualifyingTime'),
+      raceDateTime: formData.get('raceDateTime'),
+      qualifyingDateTime: formData.get('qualifyingDateTime'),
       isSprint: formData.get('isSprint') === 'true',
       timezone: formData.get('timezone'),
+      userTimezone: formData.get('userTimezone') as string,
     })
 
-    // Combinar fecha y hora locales
-    const raceLocalDateTime = new Date(`${data.raceDate}T${data.raceTime}:00`)
-    const qualifyingLocalDateTime = new Date(`${data.qualifyingDate}T${data.qualifyingTime}:00`)
+    // Convertir las fechas de la zona horaria del usuario a UTC
+    const userTz = data.userTimezone || 'America/Montevideo'
+    
+    // fromZonedTime convierte una fecha en zona horaria específica a UTC
+    const raceDateLocal = new Date(data.raceDateTime)
+    const qualifyingDateLocal = new Date(data.qualifyingDateTime)
+    
+    // fromZonedTime interpreta la fecha como si estuviera en userTz y la convierte a UTC
+    const raceDate = fromZonedTime(raceDateLocal, userTz)
+    const qualifyingDate = fromZonedTime(qualifyingDateLocal, userTz)
 
-    // Convertir a UTC para almacenamiento
+    // Crear datos para el servicio con fechas ya en UTC
     const grandPrixData: UpdateGrandPrixData = {
       round: data.round,
       name: data.name,
       location: data.location,
       country: data.country,
       circuit: data.circuit,
-      raceDate: convertLocalDateToUTC(raceLocalDateTime, data.timezone),
-      qualifyingDate: convertLocalDateToUTC(qualifyingLocalDateTime, data.timezone),
+      raceDate,
+      qualifyingDate,
       isSprint: data.isSprint,
-      timezone: data.timezone,
+      timezone: data.timezone, // Zona horaria del circuito para referencia
     }
 
     await updateGrandPrix(id, grandPrixData)
@@ -135,7 +157,9 @@ export async function updateGrandPrixAction(id: string, formData: FormData) {
     shouldRedirect = true
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return { success: false, error: 'Datos inválidos' }
+      // Mostrar detalles específicos del error de validación
+      const fieldErrors = error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
+      return { success: false, error: `Datos inválidos: ${fieldErrors}` }
     }
     if (error instanceof Error) {
       return { success: false, error: error.message }

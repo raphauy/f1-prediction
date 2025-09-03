@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { getGrandPrixById } from '@/services/grand-prix-service'
+import { DateTimeDisplay } from '@/components/ui/date-time-display'
 import {
   Calendar,
   ChevronLeft,
@@ -83,11 +84,25 @@ export default async function GrandPrixDetailPage({ params }: GrandPrixDetailPag
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span>Clasificación: {grandPrix.formattedDates?.qualifyingLocal}</span>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">Clasificación</span>
+                  <DateTimeDisplay 
+                    date={grandPrix.qualifyingDate}
+                    formatStr="SHORT_WITH_TIME"
+                    className="text-sm text-muted-foreground"
+                  />
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <Flag className="h-4 w-4 text-muted-foreground" />
-                <span>Carrera: {grandPrix.formattedDates?.raceLocal}</span>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">Carrera</span>
+                  <DateTimeDisplay 
+                    date={grandPrix.raceDate}
+                    formatStr="SHORT_WITH_TIME"
+                    className="text-sm text-muted-foreground"
+                  />
+                </div>
               </div>
             </div>
 

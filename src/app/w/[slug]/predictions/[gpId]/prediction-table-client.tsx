@@ -6,8 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { ArrowLeft, Clock, Trophy, Users } from 'lucide-react'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { DateTimeDisplay } from '@/components/ui/date-time-display'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { PredictionModal } from './prediction-modal'
@@ -129,12 +128,16 @@ export function PredictionTableClient({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">
-                {format(new Date(grandPrix.qualifyingDate), "d 'de' MMMM", { locale: es })}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {format(new Date(grandPrix.qualifyingDate), "HH:mm", { locale: es })} hora local
-              </p>
+              <div className="space-y-1">
+                <DateTimeDisplay 
+                  date={grandPrix.qualifyingDate}
+                  formatStr="FULL"
+                  className="text-lg font-semibold block"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Tu hora local
+                </p>
+              </div>
               {isDeadlinePassed && (
                 <Badge variant="secondary" className="mt-2">
                   Predicciones cerradas

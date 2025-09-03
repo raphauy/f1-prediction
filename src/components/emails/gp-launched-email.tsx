@@ -10,8 +10,7 @@ import {
   Text,
   Tailwind,
 } from '@react-email/components'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
+import { formatForEmail } from '@/lib/date-formatting'
 
 interface GPLaunchedEmailProps {
   userEmail?: string
@@ -38,8 +37,9 @@ export default function GPLaunchedEmail({
   predictUrl = "https://ejemplo.com/w/workspace/predictions/gp123",
   workspaceName = "Mi Liga F1"
 }: GPLaunchedEmailProps) {
-  const formattedRaceDate = format(raceDate, "d 'de' MMMM 'a las' HH:mm", { locale: es })
-  const formattedQualifyingDate = format(qualifyingDate, "d 'de' MMMM 'a las' HH:mm", { locale: es })
+  // Formatear fechas para el email (mostrarán UTC ya que no conocemos la zona del usuario)
+  const formattedRaceDate = formatForEmail(raceDate)
+  const formattedQualifyingDate = formatForEmail(qualifyingDate)
 
   return (
     <Html>

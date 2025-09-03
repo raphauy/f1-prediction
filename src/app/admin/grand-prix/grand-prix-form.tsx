@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react'
 import { useFormStatus } from 'react-dom'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
+import { DateTimeInput } from '@/components/ui/datetime-input'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Loader2, AlertCircle } from 'lucide-react'
+import { Loader2, AlertCircle, Info, ExternalLink } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -15,8 +16,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { createGrandPrixAction, updateGrandPrixAction } from './actions'
-import { formatInTimeZone } from 'date-fns-tz'
-import { differenceInDays, parseISO } from 'date-fns'
+import { differenceInDays } from 'date-fns'
+import { useUserTimezone } from '@/hooks/use-user-timezone'
+import { utcToLocalDateTimeString, getTimezoneDisplay } from '@/lib/date-formatting'
 import type { GrandPrixWithDetails } from '@/services/grand-prix-service'
 import Link from 'next/link'
 
@@ -61,35 +63,25 @@ function SubmitButton({ isEdit }: { isEdit: boolean }) {
 }
 
 export function GrandPrixForm({ grandPrix, seasons }: GrandPrixFormProps) {
+  const { timezone: userTimezone, isClient } = useUserTimezone()
   const [selectedTimezone, setSelectedTimezone] = useState(grandPrix?.timezone || 'Europe/Monaco')
   const [error, setError] = useState<string | null>(null)
   const [validationWarnings, setValidationWarnings] = useState<string[]>([])
-  const [qualifyingDate, setQualifyingDate] = useState('')
-  const [qualifyingTime, setQualifyingTime] = useState('')
-  const [raceDate, setRaceDate] = useState('')
-  const [raceTime, setRaceTime] = useState('')
+  const [qualifyingDateTime, setQualifyingDateTime] = useState('')
+  const [raceDateTime, setRaceDateTime] = useState('')
   const [isSprint, setIsSprint] = useState(grandPrix?.isSprint || false)
 
-  // Si estamos editando, convertir las fechas UTC a la zona horaria local
-  const getLocalDateString = (utcDate: Date | string, timezone: string) => {
-    const date = new Date(utcDate)
-    return formatInTimeZone(date, timezone, 'yyyy-MM-dd')
-  }
-
-  const getLocalTimeString = (utcDate: Date | string, timezone: string) => {
-    const date = new Date(utcDate)
-    return formatInTimeZone(date, timezone, 'HH:mm')
-  }
-
-  // Inicializar valores para edición
+  // Inicializar valores para edición - convertir UTC a hora local del admin
   useEffect(() => {
     if (grandPrix) {
-      setQualifyingDate(getLocalDateString(grandPrix.qualifyingDate, selectedTimezone))
-      setQualifyingTime(getLocalTimeString(grandPrix.qualifyingDate, selectedTimezone))
-      setRaceDate(getLocalDateString(grandPrix.raceDate, selectedTimezone))
-      setRaceTime(getLocalTimeString(grandPrix.raceDate, selectedTimezone))
+      // Inicializar con los valores del GP existente
+      const qualifyingLocal = utcToLocalDateTimeString(grandPrix.qualifyingDate)
+      const raceLocal = utcToLocalDateTimeString(grandPrix.raceDate)
+      
+      if (qualifyingLocal) setQualifyingDateTime(qualifyingLocal)
+      if (raceLocal) setRaceDateTime(raceLocal)
     }
-  }, [grandPrix, selectedTimezone])
+  }, [grandPrix])
 
   // Validación en tiempo real
   useEffect(() => {
@@ -97,9 +89,10 @@ export function GrandPrixForm({ grandPrix, seasons }: GrandPrixFormProps) {
     
     // Solo mostrar advertencias si no está deshabilitada la validación
     if (process.env.NEXT_PUBLIC_DISABLE_GP_DATE_VALIDATION !== 'true') {
-      if (qualifyingDate && raceDate) {
-        const qDate = parseISO(qualifyingDate)
-        const rDate = parseISO(raceDate)
+      if (qualifyingDateTime && raceDateTime) {
+        // Los datetime-local inputs devuelven strings sin zona, interpretados como hora local
+        const qDate = new Date(qualifyingDateTime)
+        const rDate = new Date(raceDateTime)
         
         // Validar orden de fechas
         if (qDate >= rDate) {
@@ -128,35 +121,17 @@ export function GrandPrixForm({ grandPrix, seasons }: GrandPrixFormProps) {
         }
       }
       
-      // Validar horarios típicos
-      if (qualifyingTime) {
-        const hour = parseInt(qualifyingTime.split(':')[0])
-        if (hour < 13 || hour > 18) {
-          warnings.push('Horario de clasificación atípico (normalmente 13:00-18:00)')
-        }
-      }
-      
-      if (raceTime) {
-        const hour = parseInt(raceTime.split(':')[0])
-        const isLasVegas = selectedTimezone === 'America/Los_Angeles'
-        
-        if (isLasVegas) {
-          if (hour >= 6 && hour <= 19) {
-            warnings.push('Las Vegas tiene carreras nocturnas (20:00-02:00)')
-          }
-        } else {
-          if (hour < 12 || hour > 16) {
-            warnings.push('Horario de carrera atípico (normalmente 12:00-16:00)')
-          }
-        }
-      }
     }
     
     setValidationWarnings(warnings)
-  }, [qualifyingDate, qualifyingTime, raceDate, raceTime, isSprint, grandPrix, selectedTimezone])
+  }, [qualifyingDateTime, raceDateTime, isSprint, grandPrix])
 
   const action = async (formData: FormData) => {
     formData.set('timezone', selectedTimezone)
+    
+    // Agregar la zona horaria del navegador del usuario para conversión correcta
+    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    formData.set('userTimezone', userTimezone)
     
     const result = grandPrix
       ? await updateGrandPrixAction(grandPrix.id, formData)
@@ -267,13 +242,13 @@ export function GrandPrixForm({ grandPrix, seasons }: GrandPrixFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="timezone">Zona Horaria</Label>
+        <Label htmlFor="timezone">Zona Horaria del Circuito</Label>
         <Select 
           value={selectedTimezone} 
           onValueChange={setSelectedTimezone}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Selecciona la zona horaria" />
+            <SelectValue placeholder="Selecciona la zona horaria del circuito" />
           </SelectTrigger>
           <SelectContent>
             {F1_TIMEZONES.map((tz) => (
@@ -283,69 +258,59 @@ export function GrandPrixForm({ grandPrix, seasons }: GrandPrixFormProps) {
             ))}
           </SelectContent>
         </Select>
-        <p className="text-sm text-muted-foreground">
-          Las fechas y horas se guardarán en la zona horaria del circuito
-        </p>
+        <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5" />
+          <div className="text-sm space-y-1">
+            <p className="text-blue-700 dark:text-blue-300">
+              Estás ingresando fechas y horas en tu zona horaria local: <strong>{isClient ? getTimezoneDisplay(userTimezone) : 'Cargando...'}</strong>
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-4">
-          <h3 className="font-medium">Clasificación</h3>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="qualifyingDate">Fecha</Label>
-              <Input
-                id="qualifyingDate"
-                name="qualifyingDate"
-                type="date"
-                value={qualifyingDate}
-                onChange={(e) => setQualifyingDate(e.target.value)}
-                min={!grandPrix ? new Date().toISOString().split('T')[0] : undefined}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="qualifyingTime">Hora local</Label>
-              <Input
-                id="qualifyingTime"
-                name="qualifyingTime"
-                type="time"
-                value={qualifyingTime}
-                onChange={(e) => setQualifyingTime(e.target.value)}
-                required
-              />
-            </div>
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="qualifyingDateTime">Fecha y Hora de Clasificación (tu hora local)</Label>
+          <DateTimeInput
+            id="qualifyingDateTime"
+            name="qualifyingDateTime"
+            value={qualifyingDateTime}
+            onChange={setQualifyingDateTime}
+            required
+            placeholder="06/09/2025, 11:00"
+          />
         </div>
 
-        <div className="space-y-4">
-          <h3 className="font-medium">Carrera</h3>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="raceDate">Fecha</Label>
-              <Input
-                id="raceDate"
-                name="raceDate"
-                type="date"
-                value={raceDate}
-                onChange={(e) => setRaceDate(e.target.value)}
-                min={!grandPrix ? new Date().toISOString().split('T')[0] : undefined}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="raceTime">Hora local</Label>
-              <Input
-                id="raceTime"
-                name="raceTime"
-                type="time"
-                value={raceTime}
-                onChange={(e) => setRaceTime(e.target.value)}
-                required
-              />
-            </div>
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="raceDateTime">Fecha y Hora de Carrera (tu hora local)</Label>
+          <DateTimeInput
+            id="raceDateTime"
+            name="raceDateTime"
+            value={raceDateTime}
+            onChange={setRaceDateTime}
+            required
+            placeholder="07/09/2025, 10:00"
+          />
         </div>
+      </div>
+
+      <div className="flex justify-center">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="gap-2 text-sm"
+          asChild
+        >
+          <Link 
+            href={`https://www.formula1.com/en/racing/${new Date().getFullYear()}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <ExternalLink className="h-4 w-4" />
+            Consultar calendario oficial de F1
+          </Link>
+        </Button>
       </div>
 
       <div className="flex items-center space-x-2">

@@ -1,8 +1,8 @@
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { GrandPrix, Prisma, QuestionType, GPStatus } from '@prisma/client'
-import { formatInTimeZone, fromZonedTime, toZonedTime } from 'date-fns-tz'
-import { addDays, differenceInDays, getHours } from 'date-fns'
+import { fromZonedTime, toZonedTime } from 'date-fns-tz'
+import { addDays, getHours } from 'date-fns'
 import { sendGPLaunchedNotifications } from './notification-service'
 
 // Lista de zonas horarias válidas para F1
@@ -55,17 +55,19 @@ export const createGrandPrixSchema = process.env.DISABLE_GP_DATE_VALIDATION === 
     })
     .refine((data) => {
       // Validar diferencia entre clasificación y carrera
-      const diffDays = differenceInDays(data.raceDate, data.qualifyingDate)
+      const diffMs = data.raceDate.getTime() - data.qualifyingDate.getTime()
+      const diffHours = diffMs / (1000 * 60 * 60)
       
       if (data.isSprint) {
-        // Para Sprint: normalmente 2 días (viernes clasificación, domingo carrera)
-        return diffDays >= 2 && diffDays <= 3
+        // Para Sprint: típicamente 2-3 días (48-96 horas)
+        return diffHours >= 48 && diffHours <= 96
       } else {
-        // Para carrera normal: normalmente 1 día (sábado clasificación, domingo carrera)
-        return diffDays >= 1 && diffDays <= 2
+        // Para carrera normal: típicamente 0.5-2 días (12-72 horas)
+        // Permite desde sábado tarde hasta domingo
+        return diffHours >= 12 && diffHours <= 72
       }
     }, {
-      message: "La diferencia de días entre clasificación y carrera no es correcta",
+      message: "La diferencia de tiempo entre clasificación y carrera no es correcta (debe ser entre 12-72 horas para GP normal, 48-96 horas para Sprint)",
       path: ["qualifyingDate"]
     })
     .refine((data) => {
@@ -108,17 +110,21 @@ export const updateGrandPrixSchema = grandPrixBaseSchema
   .refine((data) => {
     // Validar diferencia si ambas fechas están presentes
     if (data.qualifyingDate && data.raceDate && data.isSprint !== undefined) {
-      const diffDays = differenceInDays(data.raceDate, data.qualifyingDate)
+      // Usar el tiempo en milisegundos para calcular días con precisión
+      const diffMs = data.raceDate.getTime() - data.qualifyingDate.getTime()
+      const diffHours = diffMs / (1000 * 60 * 60)
       
       if (data.isSprint) {
-        return diffDays >= 2 && diffDays <= 3
+        // Para Sprint: típicamente 2-3 días
+        return diffHours >= 48 && diffHours <= 96
       } else {
-        return diffDays >= 1 && diffDays <= 2
+        // Para carrera normal: típicamente 0.5-2 días (qualy sábado tarde, carrera domingo)
+        return diffHours >= 12 && diffHours <= 72
       }
     }
     return true
   }, {
-    message: "La diferencia de días entre clasificación y carrera no es correcta",
+    message: "La diferencia de tiempo entre clasificación y carrera no es correcta (debe ser entre 12-72 horas para GP normal, 48-96 horas para Sprint)",
     path: ["qualifyingDate"]
   })
 
@@ -427,20 +433,13 @@ function addFormattedDates(gp: GrandPrix & {
   const now = new Date()
   const isDeadlinePassed = now >= new Date(gp.qualifyingDate)
   
-  // Formatear fechas en UTC y zona local
+  // Mantener todas las fechas en UTC - la conversión a hora local se hará en el cliente
   const formattedDates = {
     race: gp.raceDate.toISOString(),
     qualifying: gp.qualifyingDate.toISOString(),
-    raceLocal: formatInTimeZone(
-      gp.raceDate,
-      gp.timezone,
-      'MMM dd, yyyy HH:mm zzz'
-    ),
-    qualifyingLocal: formatInTimeZone(
-      gp.qualifyingDate,
-      gp.timezone,
-      'MMM dd, yyyy HH:mm zzz'
-    ),
+    // Deprecated: estas propiedades se mantienen por compatibilidad pero ya no se usan
+    raceLocal: gp.raceDate.toISOString(),
+    qualifyingLocal: gp.qualifyingDate.toISOString(),
   }
   
   return {
