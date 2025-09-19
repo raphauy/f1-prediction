@@ -109,7 +109,7 @@ export function PredictionsListClient({
                         <p className="text-sm font-medium">Cierra en:</p>
                         <DateTimeDisplay
                           date={activeGP.qualifyingDate}
-                          formatStr="SHORT"
+                          formatStr="FULL"
                           className="text-xs text-muted-foreground"
                         />
                       </div>
@@ -118,7 +118,7 @@ export function PredictionsListClient({
                       <p className="text-xs text-muted-foreground">Deadline</p>
                       <DateTimeDisplay
                         date={activeGP.qualifyingDate}
-                        formatStr="SHORT"
+                        formatStr="FULL"
                         className="text-sm font-medium"
                       />
                     </div>
