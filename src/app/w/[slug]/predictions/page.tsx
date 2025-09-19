@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
-import { PredictionsRedirect } from './predictions-redirect'
-import { Skeleton } from '@/components/ui/skeleton'
+import { PredictionsList } from './predictions-list'
+import { PredictionsListSkeleton } from './predictions-list-skeleton'
 
 export default async function PredictionsPage({
   params
@@ -9,15 +9,8 @@ export default async function PredictionsPage({
 }) {
   const { slug } = await params
   return (
-    <Suspense 
-      fallback={
-        <div className="space-y-6">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-32 w-full" />
-        </div>
-      }
-    >
-      <PredictionsRedirect slug={slug} />
+    <Suspense fallback={<PredictionsListSkeleton />}>
+      <PredictionsList slug={slug} />
     </Suspense>
   )
 }

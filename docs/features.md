@@ -128,7 +128,8 @@ Template (no borrar):
 </FEATURE>
 -->
 
-<FEATURE number="1" status="COMPLETED" prp-file-path="/docs/PRPs/timezone-handling-prp.md">
-Modificar las fechas y horas de los GPS y clasificación para que se maneje timezone UTC en base de datos y en la UI el timezone del navegador, por ej el usuario admin de Uruguay verá las fechas y horas en horario de Uruguay (GMT-3 en este caso).
-El objetivo es que el horario sea claro para el admin y para los jugadores mostrando su hora (la de su navegador)
+<FEATURE number="1" status="COMPLETED" prp-file-path="/docs/PRPs/prediction-history-prp.md">
+En la vista de los jugadores, agregar una forma de ver mis resultados, es decir mis predicciones pasadas.
+Hoy por hoy hago mi predicción, llega la carrera, salen los resultados y se actualizan las tablas de posiciones pero no tengo un lugar para ver cuáles preguntas acerté y cuáles me equivoqué.
+Hacer que la UI de "Predicciones" tenga una lista de carreras pasadas (con predicciones), que por defaulta siga siendo la del GP activo para hacer las predicciones pero que también pueda ver las pasadas.
 </FEATURE>

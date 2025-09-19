@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import { ArrowLeft, Clock, Trophy, Users } from 'lucide-react'
+import { ArrowLeft, Clock, Trophy, Users, CheckCircle2, TrendingUp, XCircle } from 'lucide-react'
 import { DateTimeDisplay } from '@/components/ui/date-time-display'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -19,6 +19,10 @@ import { cn } from '@/lib/utils'
 
 type Question = QuestionType & {
   order: number
+  officialResult?: {
+    answer: string
+  } | null
+  isCorrect?: boolean | null
 }
 
 interface PredictionTableClientProps {
@@ -45,6 +49,9 @@ interface PredictionTableClientProps {
   userWorkspaceCount: number
   isDeadlinePassed: boolean
   workspaceSlug: string
+  isViewOnly?: boolean
+  correctPredictions?: number
+  totalPoints?: number
 }
 
 export function PredictionTableClient({
@@ -54,7 +61,10 @@ export function PredictionTableClient({
   answeredQuestions,
   userWorkspaceCount,
   isDeadlinePassed,
-  workspaceSlug
+  workspaceSlug,
+  isViewOnly = false,
+  correctPredictions = 0,
+  totalPoints = 0
 }: PredictionTableClientProps) {
   const [selectedQuestion, setSelectedQuestion] = useState<QuestionType | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -63,7 +73,7 @@ export function PredictionTableClient({
   const progress = totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0
 
   const handleAnswerClick = (question: QuestionType) => {
-    if (isDeadlinePassed) return
+    if (isDeadlinePassed || isViewOnly) return
     setSelectedQuestion(question)
     setIsModalOpen(true)
   }
@@ -105,80 +115,151 @@ export function PredictionTableClient({
                   Sprint
                 </Badge>
               )}
+              {isViewOnly && (
+                <Badge variant="secondary" className="w-fit">
+                  Resultados
+                </Badge>
+              )}
             </div>
             <p className="text-sm sm:text-base text-muted-foreground">
               {grandPrix.circuit}, {grandPrix.country} • Ronda {grandPrix.round}
             </p>
           </div>
           <Button asChild variant="outline" size="sm" className="w-fit">
-            <Link href={`/w/${workspaceSlug}`}>
+            <Link href={`/w/${workspaceSlug}/predictions`}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver
+              Volver a predicciones
             </Link>
           </Button>
         </div>
 
         {/* Info cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Deadline
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-1">
-                <DateTimeDisplay 
-                  date={grandPrix.qualifyingDate}
-                  formatStr="FULL"
-                  className="text-lg font-semibold block"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Tu hora local
-                </p>
-              </div>
-              {isDeadlinePassed && (
-                <Badge variant="secondary" className="mt-2">
-                  Predicciones cerradas
-                </Badge>
-              )}
-            </CardContent>
-          </Card>
+          {isViewOnly ? (
+            <>
+              {/* Tarjetas para GP pasado con resultados */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    Aciertos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {correctPredictions}
+                  </p>
+                  <p className="text-sm text-muted-foreground">de {answeredQuestions} respondidas</p>
+                  {answeredQuestions > 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {Math.round((correctPredictions / answeredQuestions) * 100)}% de acierto
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Trophy className="h-4 w-4" />
-                Tu progreso
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">
-                {answeredQuestions} / {totalQuestions}
-              </p>
-              <p className="text-sm text-muted-foreground">preguntas respondidas</p>
-              <Progress value={progress} className="mt-2 h-2" />
-            </CardContent>
-          </Card>
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    Puntos Obtenidos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    {totalPoints}
+                  </p>
+                  <p className="text-sm text-muted-foreground">puntos totales</p>
+                  {correctPredictions > 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {Math.round(totalPoints / correctPredictions)} pts promedio
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Multi-juego
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{userWorkspaceCount}</p>
-              <p className="text-sm text-muted-foreground">
-                {userWorkspaceCount === 1 ? 'juego activo' : 'juegos activos'}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Tus respuestas cuentan en todos
-              </p>
-            </CardContent>
-          </Card>
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    Errores
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                    {answeredQuestions - correctPredictions}
+                  </p>
+                  <p className="text-sm text-muted-foreground">predicciones incorrectas</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {totalQuestions - answeredQuestions} sin responder
+                  </p>
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <>
+              {/* Tarjetas para GP activo */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Deadline
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-1">
+                    <DateTimeDisplay
+                      date={grandPrix.qualifyingDate}
+                      formatStr="FULL"
+                      className="text-lg font-semibold block"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Tu hora local
+                    </p>
+                  </div>
+                  {isDeadlinePassed && (
+                    <Badge variant="secondary" className="mt-2">
+                      Predicciones cerradas
+                    </Badge>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Trophy className="h-4 w-4" />
+                    Tu progreso
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold">
+                    {answeredQuestions} / {totalQuestions}
+                  </p>
+                  <p className="text-sm text-muted-foreground">preguntas respondidas</p>
+                  <Progress value={progress} className="mt-2 h-2" />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Multi-juego
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold">{userWorkspaceCount}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {userWorkspaceCount === 1 ? 'juego activo' : 'juegos activos'}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Tus respuestas cuentan en todos
+                  </p>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </div>
       </div>
 
@@ -209,8 +290,11 @@ export function PredictionTableClient({
                   <PredictionRow
                     key={question.id}
                     question={question}
-                    isDeadlinePassed={isDeadlinePassed}
+                    isDeadlinePassed={isDeadlinePassed || isViewOnly}
                     onAnswerClick={handleAnswerClick}
+                    isViewOnly={isViewOnly}
+                    officialResult={question.officialResult}
+                    isCorrect={question.isCorrect}
                   />
                 ))}
               </div>
