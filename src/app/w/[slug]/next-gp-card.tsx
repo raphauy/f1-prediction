@@ -173,14 +173,27 @@ export function NextGPCard({ grandPrix, isGPActive, hasUserPredicted, userPredic
               <Badge variant="secondary" className="text-sm">
                 Predicciones cerradas
               </Badge>
-              {hasUserPredicted && (
+              {hasUserPredicted ? (
                 <span className="text-sm text-muted-foreground">
-                  · Esperando resultados...
+                  · {userPredictionInfo?.predictionCount || 0} predicciones realizadas
+                </span>
+              ) : (
+                <span className="text-sm text-muted-foreground">
+                  · No participaste
                 </span>
               )}
             </div>
-            <div className="text-sm text-muted-foreground">
-              Carrera: {format(new Date(grandPrix.raceDate), "d 'de' MMMM", { locale: es })}
+            <div className="flex items-center gap-3">
+              <div className="text-sm text-muted-foreground">
+                Carrera: {format(new Date(grandPrix.raceDate), "d 'de' MMMM", { locale: es })}
+              </div>
+              {hasUserPredicted && (
+                <Button asChild size="sm" variant="outline">
+                  <Link href={`/w/${workspaceSlug}/predictions/${grandPrix.id}`}>
+                    Ver mis predicciones
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
         )}

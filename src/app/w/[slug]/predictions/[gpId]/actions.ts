@@ -49,12 +49,13 @@ export async function savePredictionAction(gpQuestionId: string, answer: string)
       getUserActiveWorkspaceSeasons(session.user.id)
     ])
 
-    // Si el usuario tiene predicciones para TODAS las preguntas, registrar actividad
+    // Verificar si el usuario completó todas las predicciones
     const totalQuestions = await getGPQuestionsWithUserPredictions(gpQuestion.grandPrixId, session.user.id)
     const answeredQuestions = totalQuestions.filter(q => q.userPrediction).length
-    
+
+    // Solo intentar registrar actividad si completó todas las predicciones
     if (answeredQuestions === totalQuestions.length && grandPrix) {
-      // Registrar actividad en todos los workspaces del usuario
+      // Registrar actividad en todos los workspaces del usuario (la función verifica internamente si ya existe)
       for (const ws of userWorkspaceSeasons) {
         await logPredictionSubmitted(
           ws.workspace.id,

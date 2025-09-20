@@ -32,10 +32,18 @@ export function PredictionsListClient({
   pastGrandPrix,
   workspaceSlug
 }: PredictionsListClientProps) {
-  // Filtrar solo GPs con predicciones Y que tengan resultados (puntos > 0 o predicciones correctas > 0 indica resultados)
-  const grandPrixWithPredictions = pastGrandPrix.filter(gp =>
-    gp.hasPredictions && (gp.totalPoints > 0 || gp.correctPredictions > 0 || gp.status === 'FINISHED')
-  )
+  // Filtrar GPs con predicciones para el historial
+  // Incluir todos los GPs donde el usuario hizo predicciones, excepto el GP activo actual (que está en el otro tab)
+  const grandPrixWithPredictions = pastGrandPrix.filter(gp => {
+    // Debe tener predicciones del usuario
+    if (!gp.hasPredictions) return false
+
+    // Si es el GP activo con deadline aún no pasado, no mostrarlo aquí (está en el tab activo)
+    if (activeGP && gp.id === activeGP.id) return false
+
+    // Incluir todos los demás GPs con predicciones (con o sin resultados)
+    return true
+  })
 
   // Determinar el tab inicial basado en disponibilidad
   const defaultTab = activeGP ? "active" : "past"
@@ -196,12 +204,23 @@ export function PredictionsListClient({
                             </span>
                           </CardDescription>
                         </div>
-                        <Badge
-                          variant={gp.status === 'FINISHED' ? 'secondary' : 'outline'}
-                          className={gp.status === 'FINISHED' ? 'bg-gray-100 dark:bg-gray-800' : ''}
-                        >
-                          {gp.status === 'FINISHED' ? 'Finalizado' : 'En curso'}
-                        </Badge>
+                        {gp.status === 'FINISHED' ? (
+                          <Badge variant="secondary" className="bg-gray-100 dark:bg-gray-800">
+                            Finalizado
+                          </Badge>
+                        ) : gp.totalPoints > 0 || gp.correctPredictions > 0 ? (
+                          <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300">
+                            Con resultados
+                          </Badge>
+                        ) : new Date() > new Date(gp.qualifyingDate) ? (
+                          <Badge variant="outline" className="text-blue-600 dark:text-blue-400">
+                            En curso
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline">
+                            Esperando
+                          </Badge>
+                        )}
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">

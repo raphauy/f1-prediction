@@ -67,10 +67,10 @@ export async function getDashboardData(slug: string) {
 
   // Obtener información de predicciones del usuario
   let userPredictionInfo = { hasUserPredicted: false, predictionCount: 0, totalQuestions: 0 }
-  // Si hay un GP activo y es el mismo que se va a mostrar, obtener la info de predicciones
-  if (nextGPActive && nextGPDisplay && nextGPActive.id === nextGPDisplay.id) {
-    const predictions = await getUserPredictionsForGP(session.user.id, nextGPActive.id)
-    const totalQuestions = nextGPActive._count?.gpQuestions || 0
+  // Si hay un GP para mostrar, obtener la info de predicciones (sin importar si es el activo o no)
+  if (nextGPDisplay) {
+    const predictions = await getUserPredictionsForGP(session.user.id, nextGPDisplay.id)
+    const totalQuestions = nextGPDisplay._count?.gpQuestions || 0
     userPredictionInfo = {
       hasUserPredicted: predictions.length > 0,
       predictionCount: predictions.length,

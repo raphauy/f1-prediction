@@ -283,7 +283,7 @@ export async function getUserGrandPrixWithPredictions(
     where: {
       seasonId,
       status: {
-        in: ['ACTIVE', 'FINISHED']
+        in: ['ACTIVE', 'FINISHED'] // Solo GPs lanzados, no CREATED o PAUSED
       }
     },
     include: {

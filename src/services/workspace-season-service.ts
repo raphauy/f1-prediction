@@ -122,23 +122,29 @@ export async function getNextGrandPrixForWorkspace(workspaceId: string) {
 }
 
 /**
- * Obtiene el próximo Grand Prix sin importar su estado (para mostrar en dashboard)
+ * Obtiene el próximo Grand Prix (o el actual) para mostrar en dashboard
+ * Muestra el GP actual hasta que termine la carrera
  */
 export async function getNextGrandPrix(workspaceId: string) {
   const activeSeason = await getActiveSeasonForWorkspace(workspaceId)
   if (!activeSeason) return null
 
   const now = new Date()
-  
+
+  // Buscar el próximo GP basándose en la fecha de CARRERA (no clasificación)
+  // Así se sigue mostrando durante todo el fin de semana
   return await prisma.grandPrix.findFirst({
     where: {
       seasonId: activeSeason.seasonId,
-      qualifyingDate: {
-        gt: now
+      status: {
+        in: ['ACTIVE', 'FINISHED'] // Solo GPs lanzados
+      },
+      raceDate: {
+        gte: now // Mayor o igual para incluir el GP del día de hoy
       }
     },
     orderBy: {
-      qualifyingDate: 'asc'
+      raceDate: 'asc'
     },
     include: {
       _count: {

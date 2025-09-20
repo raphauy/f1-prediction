@@ -48,21 +48,37 @@ export async function getRecentActivities(workspaceId: string, limit: number = 1
 }
 
 /**
- * Registra cuando un usuario hace predicciones
+ * Registra cuando un usuario hace predicciones por primera vez
  */
 export async function logPredictionSubmitted(
-  workspaceId: string, 
-  userId: string, 
+  workspaceId: string,
+  userId: string,
   grandPrixName: string,
   predictionCount: number
 ) {
-  await createActivity({
-    workspaceId,
-    userId,
-    type: ActivityType.prediction_submitted,
-    description: `realizó ${predictionCount} predicciones para el ${grandPrixName}`,
-    metadata: { grandPrixName, predictionCount }
+  // Verificar si ya existe una actividad de predicciones para este GP y usuario
+  const existingActivity = await prisma.activityLog.findFirst({
+    where: {
+      workspaceId,
+      userId,
+      type: ActivityType.prediction_submitted,
+      metadata: {
+        path: ['grandPrixName'],
+        equals: grandPrixName
+      }
+    }
   })
+
+  // Solo crear la actividad si no existe una previa (primera vez que completa)
+  if (!existingActivity) {
+    await createActivity({
+      workspaceId,
+      userId,
+      type: ActivityType.prediction_submitted,
+      description: `realizó ${predictionCount} predicciones para el ${grandPrixName}`,
+      metadata: { grandPrixName, predictionCount }
+    })
+  }
 }
 
 /**
