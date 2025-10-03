@@ -125,7 +125,7 @@ export async function sendGPLaunchedNotifications(input: SendGPLaunchedNotificat
   // Enviar emails secuencialmente
   for (const user of usersToNotify) {
     try {
-      const predictUrl = `${process.env.NEXTAUTH_URL}/w/${user.workspaceSlug}/predict/${grandPrix.id}`
+      const predictUrl = `${process.env.NEXTAUTH_URL}/w/${user.workspaceSlug}/predictions/${grandPrix.id}`
       
       await resend.emails.send({
         from: `Paddock Masters <${fromEmail}>`,
@@ -244,7 +244,7 @@ export async function sendGPReminders(input: SendGPReminderInput) {
   // Enviar emails secuencialmente
   const sendToUser = async (user: { id: string; email: string; name?: string | null; workspaceName: string; workspaceSlug: string; workspaceId: string }, hasPredicted: boolean) => {
     try {
-      const predictUrl = `${process.env.NEXTAUTH_URL}/w/${user.workspaceSlug}/predict/${grandPrix.id}`
+      const predictUrl = `${process.env.NEXTAUTH_URL}/w/${user.workspaceSlug}/predictions/${grandPrix.id}`
       
       await resend.emails.send({
         from: `Paddock Masters <${fromEmail}>`,
@@ -423,7 +423,7 @@ export function generateGPReminderEmailPreview(grandPrix: GPPreviewData, workspa
       grandPrixName: grandPrix.name,
       location: grandPrix.location,
       qualifyingDate: grandPrix.qualifyingDate,
-      predictUrl: `${process.env.NEXTAUTH_URL}/w/${workspace.slug}/predict/${grandPrix.id}`,
+      predictUrl: `${process.env.NEXTAUTH_URL}/w/${workspace.slug}/predictions/${grandPrix.id}`,
       workspaceName: workspace.name,
       hasUserPredicted,
       timeRemaining

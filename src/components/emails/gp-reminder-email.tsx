@@ -31,7 +31,7 @@ export default function GPReminderEmail({
   grandPrixName = "Gran Premio de Australia",
   location = "Melbourne",
   qualifyingDate = new Date('2025-03-15T06:00:00Z'),
-  predictUrl = "https://ejemplo.com/w/workspace/predict/gp123",
+  predictUrl = "https://ejemplo.com/w/workspace/predictions/gp123",
   workspaceName = "Mi Liga F1",
   hasUserPredicted = false,
   timeRemaining
